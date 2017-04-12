@@ -1,0 +1,347 @@
+{
+  "contract_name": "Splitter",
+  "abi": [
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "beneficiaryId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getTotal",
+      "outputs": [
+        {
+          "name": "available",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "kill",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "beneficiaryId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getAvailable",
+      "outputs": [
+        {
+          "name": "available",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "sendCoin",
+      "outputs": [
+        {
+          "name": "successful",
+          "type": "bool"
+        }
+      ],
+      "payable": true,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "beneficiaryId",
+          "type": "uint256"
+        }
+      ],
+      "name": "claimAvailable",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "name": "beneficiary1",
+          "type": "address"
+        },
+        {
+          "name": "beneficiary2",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "value",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "split",
+          "type": "uint256"
+        }
+      ],
+      "name": "SplitCoinTrans",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "id",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "id2",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "Claimed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "id",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "id2",
+          "type": "address"
+        }
+      ],
+      "name": "Instance",
+      "type": "event"
+    }
+  ],
+  "unlinked_binary": "0x606060405234610000576040516040806105518339810160405280516020909101515b5b60008054600160a060020a03191633600160a060020a03161790555b60408051600160a060020a0380851682528316602082015281517fe35fa6870eeedba0df9480a717f514d523b132dc90a8075df0b4f4b91bf27b4a929181900390910190a161009c8260016401000000006103956100bc82021704565b6100b48160026401000000006103956100bc82021704565b5b5050610118565b60408051606081018252600160a060020a038481168252600060208084018281528486018381528784526001928390529590922093518454600160a060020a0319169316929092178355519082015590516002909101555b5050565b61042a806101276000396000f3006060604052361561005c5763ffffffff60e060020a6000350416631feef08e811461006157806341c0e1b5146100835780638da5cb5b146100925780639f093552146100bb578063c621fe97146100dd578063c78bbf90146100f9575b610000565b346100005761007160043561010b565b60408051918252519081900360200190f35b346100005761009061013f565b005b346100005761009f610167565b60408051600160a060020a039092168252519081900360200190f35b3461000057610071600435610176565b60408051918252519081900360200190f35b6100e56101ab565b604080519115158252519081900360200190f35b3461000057610090600435610287565b005b6000600182108061011c5750600282115b1561012657610000565b506000818152600160205260409020600201545b919050565b60005433600160a060020a039081169116141561016457600054600160a060020a0316ff5b5b565b600054600160a060020a031681565b600060018210806101875750600282115b1561019157610000565b50600081815260016020819052604090912001545b919050565b60008054819033600160a060020a039081169116146101c957610000565b3415156101d557610000565b34600114156101e357610000565b50600160209081527fcc69885fda6bcc1a4ace058b4a62bf5e179ea78fd58a1ccd71c22cc9b688793080546002348181049283019093556000527fd9d16d34ffb15ba3a3d852f0d403e2ce1d691fb54de27ac87cd2f993f3ec331080548201905560408051928352928201819052825190927fe8ac9b4420c06e4fac7acd819a72f72887d646b5ce66139486d0612a59742c5f928290030190a1600191505b5b5090565b600060018210806102985750600282115b156102a257610000565b60008281526001602052604090205433600160a060020a039081169116146102c957610000565b6000828152600160208190526040909120015415156102e757610000565b50600081815260016020819052604080832090910180549083905590519091600160a060020a0333169183156108fc0291849190818181858888f19350505050151561033257610000565b600082815260016020908152604091829020548251600160a060020a0333811682529091169181019190915280820183905290517ff7a40077ff7a04c7e61f6f26fb13774259ddf1b6bce9ecf26a8276cdd39926839181900360600190a15b5050565b60408051606081018252600160a060020a03848116825260006020808401828152848601838152878452600192839052959092209351845473ffffffffffffffffffffffffffffffffffffffff19169316929092178355519082015590516002909101555b50505600a165627a7a72305820e8d2ac8c92bd18a82fedd667c2e7f35020a9f532ff4c1a66773806a51f42b04f0029",
+  "networks": {
+    "1491902871873": {
+      "events": {
+        "0x19f4d08442a3f0e59d6f5ed694fded7ab1ddd74be5cc60b2c3dd8fa891687f8f": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "split",
+              "type": "uint256"
+            }
+          ],
+          "name": "Transfer",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x41af1021f68cba93570951fefa5bbd2430a6fa8b",
+      "updated_at": 1491923823825
+    },
+    "1491923987459": {
+      "events": {
+        "0x19f4d08442a3f0e59d6f5ed694fded7ab1ddd74be5cc60b2c3dd8fa891687f8f": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "split",
+              "type": "uint256"
+            }
+          ],
+          "name": "Transfer",
+          "type": "event"
+        },
+        "0xe8ac9b4420c06e4fac7acd819a72f72887d646b5ce66139486d0612a59742c5f": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "split",
+              "type": "uint256"
+            }
+          ],
+          "name": "SplitCoinTrans",
+          "type": "event"
+        },
+        "0xd8138f8a3f377c5259ca548e70e4c2de94f129f5a11036a15b69513cba2b426a": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "Claimed",
+          "type": "event"
+        },
+        "0xf7a40077ff7a04c7e61f6f26fb13774259ddf1b6bce9ecf26a8276cdd3992683": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "id2",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "Claimed",
+          "type": "event"
+        },
+        "0xe35fa6870eeedba0df9480a717f514d523b132dc90a8075df0b4f4b91bf27b4a": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "id2",
+              "type": "address"
+            }
+          ],
+          "name": "Instance",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x6de14b768fed76f31b810de4c93de88ef3193bc8",
+      "updated_at": 1491943054013
+    },
+    "1491943139080": {
+      "events": {
+        "0xe8ac9b4420c06e4fac7acd819a72f72887d646b5ce66139486d0612a59742c5f": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "split",
+              "type": "uint256"
+            }
+          ],
+          "name": "SplitCoinTrans",
+          "type": "event"
+        },
+        "0xf7a40077ff7a04c7e61f6f26fb13774259ddf1b6bce9ecf26a8276cdd3992683": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "id2",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "Claimed",
+          "type": "event"
+        },
+        "0xe35fa6870eeedba0df9480a717f514d523b132dc90a8075df0b4f4b91bf27b4a": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "id2",
+              "type": "address"
+            }
+          ],
+          "name": "Instance",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x6fd8297208bbcea04578d3b41ccabed500cca14b",
+      "updated_at": 1491945749479
+    }
+  },
+  "schema_version": "0.0.5",
+  "updated_at": 1491945749479
+}
