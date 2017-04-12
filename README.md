@@ -1,2 +1,2 @@
 # DAPPS
-Ethereum DAPPS reap
+Ethereum DAPPS repo
