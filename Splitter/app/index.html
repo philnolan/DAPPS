@@ -9,14 +9,24 @@
 </head>
 <body>
   <script src="js/app.js"></script>
+  <div>Accounts: <span id="accounts"></span></div>
+  <br />
+  <br />
+  <div>1. Covenant owner: <input id="owner" placeholder="0" /><button id="create">Create</button></div>
+  <div>2. Add beneficiary: <input id="beneficiary" placeholder="0" /><button id="add">Add</button></div>
+  <div>3. Repeat add beneficiary...</div>
+  <div>4. Send amount to split <input id="amount" type="number" placeholder="0" /><button id="send">Send</button></div>
+  <div>5. Claim <input id="claimAddr" placeholder="0" /><button id="claim">Claim</button></div>
+  <br />
+  <div>Account 0 (<span id="acc0Address"></span>) and has a total balance of <span id="acc0Balance">loading...</span>  </div>
+  <div>Account 1 (<span id="acc1Address"></span>) and has a total balance of <span id="acc1Balance">loading...</span>  </div>
+  <div>Account 2 (<span id="acc2Address"></span>) and has a total balance of <span id="acc2Balance">loading...</span>  </div>
+
+  <br />
   <div>Splitter contract (<span id="address"></span>) and has a total balance of <span id="balance">loading...</span>  </div>
-  <div>Bobs contract (<span id="bobsAddress"></span>) and has a total balance of <span id="bobsBalance">loading...</span>  </div>
-  <div>Carols contract (<span id="carolsAddress"></span>) and has a total balance of <span id="carolsBalance">loading...</span>  </div>
+  <div>Beneficiary 1 has a splitter total claimed balance of <span id="ben1TotalBalance">loading...</span> with <span id="ben1AvailableBalance">loading...</span> available</div>
+  <div>Beneficiary 2 has a splitter total claimed balance of <span id="ben2TotalBalance">loading...</span> with <span id="ben2AvailableBalance">loading...</span> available</div>
   <br />
-  <div>Bob has a splitter total balance of <span id="bobsTotalBalance">loading...</span> with <span id="bobsAvailableBalance">loading...</span> available to claim <button id="bobClaim">Claim</button> </div>
-  <div>Carols has a total balance of <span id="carolsTotalBalance">loading...</span> with <span id="carolsAvailableBalance">loading...</span> available to claim <button id="carolClaim">Claim</button>.</div>
-  <br />
-  <div>Send amount to split <input name="amount" type="number" placeholder="0" /><button id="send">Send</button></div>
   <br />
   <div>Status: <span id="status" /></div>
 

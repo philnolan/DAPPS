@@ -15970,15 +15970,15 @@ module.exports = {
 			"constant": false,
 			"inputs": [
 				{
-					"name": "beneficiaryId",
-					"type": "uint256"
+					"name": "covenantOwner",
+					"type": "address"
 				}
 			],
-			"name": "getTotal",
+			"name": "claimAvailable",
 			"outputs": [
 				{
-					"name": "available",
-					"type": "uint256"
+					"name": "successful",
+					"type": "bool"
 				}
 			],
 			"payable": false,
@@ -15994,12 +15994,21 @@ module.exports = {
 		},
 		{
 			"constant": true,
-			"inputs": [],
-			"name": "owner",
+			"inputs": [
+				{
+					"name": "covenantOwner",
+					"type": "address"
+				}
+			],
+			"name": "getBeneficiaryDetail",
 			"outputs": [
 				{
-					"name": "",
-					"type": "address"
+					"name": "available",
+					"type": "uint256"
+				},
+				{
+					"name": "totalClaimed",
+					"type": "uint256"
 				}
 			],
 			"payable": false,
@@ -16009,15 +16018,23 @@ module.exports = {
 			"constant": false,
 			"inputs": [
 				{
-					"name": "beneficiaryId",
-					"type": "uint256"
+					"name": "beneficiaryAddr",
+					"type": "address"
 				}
 			],
-			"name": "getAvailable",
+			"name": "addBeneficiary",
+			"outputs": [],
+			"payable": false,
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
+			"name": "owner",
 			"outputs": [
 				{
-					"name": "available",
-					"type": "uint256"
+					"name": "",
+					"type": "address"
 				}
 			],
 			"payable": false,
@@ -16038,30 +16055,45 @@ module.exports = {
 		},
 		{
 			"constant": false,
-			"inputs": [
-				{
-					"name": "beneficiaryId",
-					"type": "uint256"
-				}
-			],
-			"name": "claimAvailable",
+			"inputs": [],
+			"name": "createCovenant",
 			"outputs": [],
 			"payable": false,
 			"type": "function"
 		},
 		{
+			"inputs": [],
+			"payable": false,
+			"type": "constructor"
+		},
+		{
+			"anonymous": false,
 			"inputs": [
 				{
-					"name": "beneficiary1",
-					"type": "address"
-				},
-				{
-					"name": "beneficiary2",
+					"indexed": false,
+					"name": "addr",
 					"type": "address"
 				}
 			],
-			"payable": false,
-			"type": "constructor"
+			"name": "ConventCreated",
+			"type": "event"
+		},
+		{
+			"anonymous": false,
+			"inputs": [
+				{
+					"indexed": false,
+					"name": "owner",
+					"type": "address"
+				},
+				{
+					"indexed": false,
+					"name": "beneficiary",
+					"type": "address"
+				}
+			],
+			"name": "BeneficiaryAdded",
+			"type": "event"
 		},
 		{
 			"anonymous": false,
@@ -16075,9 +16107,14 @@ module.exports = {
 					"indexed": false,
 					"name": "split",
 					"type": "uint256"
+				},
+				{
+					"indexed": false,
+					"name": "remainder",
+					"type": "uint256"
 				}
 			],
-			"name": "SplitCoinTrans",
+			"name": "CoinSentAndSplit",
 			"type": "event"
 		},
 		{
@@ -16099,28 +16136,11 @@ module.exports = {
 					"type": "uint256"
 				}
 			],
-			"name": "Claimed",
-			"type": "event"
-		},
-		{
-			"anonymous": false,
-			"inputs": [
-				{
-					"indexed": false,
-					"name": "id",
-					"type": "address"
-				},
-				{
-					"indexed": false,
-					"name": "id2",
-					"type": "address"
-				}
-			],
-			"name": "Instance",
+			"name": "CoinClaimed",
 			"type": "event"
 		}
 	],
-	"unlinked_binary": "0x606060405234610000576040516040806105518339810160405280516020909101515b5b60008054600160a060020a03191633600160a060020a03161790555b60408051600160a060020a0380851682528316602082015281517fe35fa6870eeedba0df9480a717f514d523b132dc90a8075df0b4f4b91bf27b4a929181900390910190a161009c8260016401000000006103956100bc82021704565b6100b48160026401000000006103956100bc82021704565b5b5050610118565b60408051606081018252600160a060020a038481168252600060208084018281528486018381528784526001928390529590922093518454600160a060020a0319169316929092178355519082015590516002909101555b5050565b61042a806101276000396000f3006060604052361561005c5763ffffffff60e060020a6000350416631feef08e811461006157806341c0e1b5146100835780638da5cb5b146100925780639f093552146100bb578063c621fe97146100dd578063c78bbf90146100f9575b610000565b346100005761007160043561010b565b60408051918252519081900360200190f35b346100005761009061013f565b005b346100005761009f610167565b60408051600160a060020a039092168252519081900360200190f35b3461000057610071600435610176565b60408051918252519081900360200190f35b6100e56101ab565b604080519115158252519081900360200190f35b3461000057610090600435610287565b005b6000600182108061011c5750600282115b1561012657610000565b506000818152600160205260409020600201545b919050565b60005433600160a060020a039081169116141561016457600054600160a060020a0316ff5b5b565b600054600160a060020a031681565b600060018210806101875750600282115b1561019157610000565b50600081815260016020819052604090912001545b919050565b60008054819033600160a060020a039081169116146101c957610000565b3415156101d557610000565b34600114156101e357610000565b50600160209081527fcc69885fda6bcc1a4ace058b4a62bf5e179ea78fd58a1ccd71c22cc9b688793080546002348181049283019093556000527fd9d16d34ffb15ba3a3d852f0d403e2ce1d691fb54de27ac87cd2f993f3ec331080548201905560408051928352928201819052825190927fe8ac9b4420c06e4fac7acd819a72f72887d646b5ce66139486d0612a59742c5f928290030190a1600191505b5b5090565b600060018210806102985750600282115b156102a257610000565b60008281526001602052604090205433600160a060020a039081169116146102c957610000565b6000828152600160208190526040909120015415156102e757610000565b50600081815260016020819052604080832090910180549083905590519091600160a060020a0333169183156108fc0291849190818181858888f19350505050151561033257610000565b600082815260016020908152604091829020548251600160a060020a0333811682529091169181019190915280820183905290517ff7a40077ff7a04c7e61f6f26fb13774259ddf1b6bce9ecf26a8276cdd39926839181900360600190a15b5050565b60408051606081018252600160a060020a03848116825260006020808401828152848601838152878452600192839052959092209351845473ffffffffffffffffffffffffffffffffffffffff19169316929092178355519082015590516002909101555b50505600a165627a7a72305820e8d2ac8c92bd18a82fedd667c2e7f35020a9f532ff4c1a66773806a51f42b04f0029",
+	"unlinked_binary": "0x606060405234610000575b5b60008054600160a060020a03191633600160a060020a03161790555b5b5b6106c2806100386000396000f300606060405236156100675763ffffffff60e060020a6000350416630b5d79af811461006c57806341c0e1b514610099578063570a2fe5146100a85780635926651d146100da5780638da5cb5b146100f5578063c621fe971461011e578063d512fafb1461013a575b610000565b3461000057610085600160a060020a0360043516610149565b604080519115158252519081900360200190f35b34610000576100a661027d565b005b34610000576100c1600160a060020a03600435166102a5565b6040805192835260208301919091528051918290030190f35b34610000576100a6600160a060020a0360043516610316565b005b3461000057610102610462565b60408051600160a060020a039092168252519081900360200190f35b610085610471565b604080519115158252519081900360200190f35b34610000576100a6610626565b005b600160a060020a03808216600090815260016020908152604080832033909416835292905290812060020154819060ff16151561018557610000565b50600160a060020a03808316600090815260016020908152604080832033909416835292905220548015156101b957610000565b8030600160a060020a03163110156101d057610000565b600160a060020a0383811660009081526001602081815260408084203390951680855294909152808320838155909101805485019055516108fc84150291849190818181858888f19350505050151561022857610000565b60408051600160a060020a0333811682528516602082015280820183905290517f38dda2e3f3260fffa8b4fbae3bd87725221d40502bdf2e14cc2eb20d3a8765209181900360600190a1600191505b50919050565b60005433600160a060020a03908116911614156102a257600054600160a060020a0316ff5b5b565b600160a060020a03808216600090815260016020908152604080832033909416835292905290812060020154819060ff1615156102e157610000565b5050600160a060020a03818116600090815260016020818152604080842033909516845293905291902080549101545b915091565b6000805433600160a060020a0390811691161461033257610000565b600160a060020a0333166000908152600160205260409020600290810154141561035b57610000565b600160a060020a0333811660009081526001602090815260408083209386168352929052206002015460ff161561039157610000565b5033600160a060020a0390811660008181526001602081815260408084206002808201805480870190915583516060810185528781528086018881528186018881529a8c16808a52858852868a209251835590518289015599519201805460ff1916921515929092179091558086529301825292839020805473ffffffffffffffffffffffffffffffffffffffff191686179055825193845283019390935280517fbb39c36a7502b7256e1a687254146a9a2ea7b146c77cb9e40eb0e2b8793781e19281900390910190a15b5b5050565b600054600160a060020a031681565b600080548190819081908190819081908190819033600160a060020a0390811691161461049d57610000565b60013410156104ab57610000565b600160a060020a03331660009081526001602052604090206002015415156104d257610000565b600160a060020a03331660009081526001602052604090206002015434985096508688811561000057600160a060020a0333166000908152600160205260408120600201549290910497508888029650868a03955090935091505b8282101561057c5750600160a060020a0333811660009081526001602081815260408084208685529283018252808420549094168084529190529190208054870190555b60019091019061052d565b600160a060020a03331660009081526001602052604081206003018054870190558411156105d457604051600160a060020a0333169085156108fc029086906000818181858888f1935050505015156105d457610000565b5b604080518981526020810188905280820186905290517f21c577cd47ad7c614f46f7c12ab8bc158cbd708e38eec79db9ebb4b9f4b86b1c9181900360600190a1600198505b5b505050505050505090565b60408051808201825260008082526020808301828152600160a060020a03331680845260018352928590209351600285015551600390930192909255825190815291517f1971e654f8704895ecbd404a0c2e6a97883b38b5f3d29e24e54e10f48a9103ca9281900390910190a15b5600a165627a7a72305820dd1f8b381449b9f5ae7e4cae810c7a638c40a66b0eabc76c5dd385cf2d8d19550029",
 	"networks": {
 		"1491902871873": {
 			"events": {
@@ -16300,15 +16320,190 @@ module.exports = {
 					],
 					"name": "Instance",
 					"type": "event"
+				},
+				"0xf51f0dbf673d40f02499208c98f0012ebe0135bcaa37a41805570417c506a4b7": {
+					"anonymous": false,
+					"inputs": [
+						{
+							"indexed": false,
+							"name": "value",
+							"type": "uint256"
+						},
+						{
+							"indexed": false,
+							"name": "split",
+							"type": "uint256"
+						},
+						{
+							"indexed": false,
+							"name": "remainder",
+							"type": "uint256"
+						}
+					],
+					"name": "SplitCoins",
+					"type": "event"
+				},
+				"0x1971e654f8704895ecbd404a0c2e6a97883b38b5f3d29e24e54e10f48a9103ca": {
+					"anonymous": false,
+					"inputs": [
+						{
+							"indexed": false,
+							"name": "addr",
+							"type": "address"
+						}
+					],
+					"name": "ConventCreated",
+					"type": "event"
+				},
+				"0x21c577cd47ad7c614f46f7c12ab8bc158cbd708e38eec79db9ebb4b9f4b86b1c": {
+					"anonymous": false,
+					"inputs": [
+						{
+							"indexed": false,
+							"name": "value",
+							"type": "uint256"
+						},
+						{
+							"indexed": false,
+							"name": "split",
+							"type": "uint256"
+						},
+						{
+							"indexed": false,
+							"name": "remainder",
+							"type": "uint256"
+						}
+					],
+					"name": "CoinSentAndSplit",
+					"type": "event"
+				},
+				"0x38dda2e3f3260fffa8b4fbae3bd87725221d40502bdf2e14cc2eb20d3a876520": {
+					"anonymous": false,
+					"inputs": [
+						{
+							"indexed": false,
+							"name": "id",
+							"type": "address"
+						},
+						{
+							"indexed": false,
+							"name": "id2",
+							"type": "address"
+						},
+						{
+							"indexed": false,
+							"name": "value",
+							"type": "uint256"
+						}
+					],
+					"name": "CoinClaimed",
+					"type": "event"
+				},
+				"0xbb39c36a7502b7256e1a687254146a9a2ea7b146c77cb9e40eb0e2b8793781e1": {
+					"anonymous": false,
+					"inputs": [
+						{
+							"indexed": false,
+							"name": "owner",
+							"type": "address"
+						},
+						{
+							"indexed": false,
+							"name": "beneficiary",
+							"type": "address"
+						}
+					],
+					"name": "BeneficiaryAdded",
+					"type": "event"
 				}
 			},
 			"links": {},
-			"address": "0x74dc111ebf5ba3c48ab786aba1f939e8f34b2e96",
-			"updated_at": 1491943147467
+			"address": "0xa31747620c311456813d28fc63042e1ee2dad1f4",
+			"updated_at": 1492030989201
+		},
+		"1492031092755": {
+			"events": {
+				"0x1971e654f8704895ecbd404a0c2e6a97883b38b5f3d29e24e54e10f48a9103ca": {
+					"anonymous": false,
+					"inputs": [
+						{
+							"indexed": false,
+							"name": "addr",
+							"type": "address"
+						}
+					],
+					"name": "ConventCreated",
+					"type": "event"
+				},
+				"0xbb39c36a7502b7256e1a687254146a9a2ea7b146c77cb9e40eb0e2b8793781e1": {
+					"anonymous": false,
+					"inputs": [
+						{
+							"indexed": false,
+							"name": "owner",
+							"type": "address"
+						},
+						{
+							"indexed": false,
+							"name": "beneficiary",
+							"type": "address"
+						}
+					],
+					"name": "BeneficiaryAdded",
+					"type": "event"
+				},
+				"0x21c577cd47ad7c614f46f7c12ab8bc158cbd708e38eec79db9ebb4b9f4b86b1c": {
+					"anonymous": false,
+					"inputs": [
+						{
+							"indexed": false,
+							"name": "value",
+							"type": "uint256"
+						},
+						{
+							"indexed": false,
+							"name": "split",
+							"type": "uint256"
+						},
+						{
+							"indexed": false,
+							"name": "remainder",
+							"type": "uint256"
+						}
+					],
+					"name": "CoinSentAndSplit",
+					"type": "event"
+				},
+				"0x38dda2e3f3260fffa8b4fbae3bd87725221d40502bdf2e14cc2eb20d3a876520": {
+					"anonymous": false,
+					"inputs": [
+						{
+							"indexed": false,
+							"name": "id",
+							"type": "address"
+						},
+						{
+							"indexed": false,
+							"name": "id2",
+							"type": "address"
+						},
+						{
+							"indexed": false,
+							"name": "value",
+							"type": "uint256"
+						}
+					],
+					"name": "CoinClaimed",
+					"type": "event"
+				}
+			},
+			"links": {},
+			"address": "0x73dc8ae80dc5fe184ee3502be476abc1ddd38a0b",
+			"updated_at": 1492031097647
 		}
 	},
 	"schema_version": "0.0.5",
-	"updated_at": 1491943147467
+	"updated_at": 1492031097647
 };
 
 /***/ }),
@@ -32306,24 +32501,32 @@ const refreshBalances = function(splitter) {
   return  web3.eth.getBalancePromise(splitter.address)
             .then(function(balance) {
               $("#balance").html(balance.toString(10));
-              return  web3.eth.getBalance(window.bobAddr);
+              return  web3.eth.getBalancePromise(window.account0);
             }).then(function(balance) {
-              $("#bobsBalance").html(balance.toString(10));
-              return  web3.eth.getBalance(window.carolAddr);
+              $("#acc0Balance").html(balance.toString(10));
+              return  web3.eth.getBalancePromise(window.account1);
             }).then(function(balance) {
-              $("#carolsBalance").html(balance.toString(10));
-              return splitter.getAvailable.call(bobsId);
+              $("#acc1Balance").html(balance.toString(10));
+              return  web3.eth.getBalancePromise(window.account2);
             }).then(function(balance) {
-              $("#bobsAvailableBalance").html(balance.toString(10));
-              return splitter.getAvailable.call(carolsId);
+              $("#acc2Balance").html(balance.toString(10));
+              return splitter.getBeneficiaryDetail.call(window.account0, { from: window.account1});
             }).then(function(balance) {
-              $("#carolsAvailableBalance").html(balance.toString(10));
-              return splitter.getTotal.call(bobsId);
+              $("#ben1AvailableBalance").html(balance[0].toString(10));
+              $("#ben1TotalBalance").html(balance[1].toString(10));
+              return splitter.getBeneficiaryDetail.call(window.account0, { from: window.account2});
             }).then(function(balance) {
-              $("#bobsTotalBalance").html(balance.toString(10));
-              return splitter.getTotal.call(carolsId);
-            }).then(function(balance) {
-              $("#carolsTotalBalance").html(balance.toString(10));
+              $("#ben2AvailableBalance").html(balance[0].toString(10));
+              $("#ben2TotalBalance").html(balance[1].toString(10));
+                //return splitter.getAvailable.call(carolsId);
+            //}).then(function(balance) {
+            //  $("#carolsAvailableBalance").html(balance.toString(10));
+            //  return splitter.getTotal.call(bobsId);
+          //}).then(function(balance) {
+          //    $("#bobsTotalBalance").html(balance.toString(10));
+          //    return splitter.getTotal.call(carolsId);
+          //  }).then(function(balance) {
+          //    $("#carolsTotalBalance").html(balance.toString(10));
             });
 
 }
@@ -32334,14 +32537,22 @@ window.addEventListener('load', function() {
 
     web3.eth.getAccountsPromise()
         .then(accounts => {
-            window.account = accounts[0];
-            window.bobAddr = accounts[1];
-            window.carolAddr = accounts[2];
-            $("#bobsAddress").html(accounts[bobsId]);
-            $("#carolsAddress").html(accounts[carolsId]);
-            return Splitter.deployed(window.bobAddr, window.carolAddr, { from: window.account});
+
+            window.account0 = accounts[0];
+            window.account1 = accounts[1];
+            window.account2 = accounts[2];
+
+            $("#accounts").html(accounts[0] + " : " + accounts[1] + " : " + accounts[2]);
+            $("#owner").val(accounts[0]);
+            $("#beneficiary").val(accounts[1]);
+            $("#claimAddr").val(accounts[1]);
+
+            $("#acc0Address").html(accounts[0]);
+            $("#acc1Address").html(accounts[1]);
+            $("#acc2Address").html(accounts[2]);
+            return Splitter.deployed();
           }).then(function(instance) {
-            console.log(instance);
+            //console.log(instance);
             $("#address").html(instance.address);
             return refreshBalances(instance);
           })
@@ -32350,8 +32561,10 @@ window.addEventListener('load', function() {
               console.error(e);
           });
 
+    $("#create").click(createCovenant);
+    $("#add").click(addBeneficiary);
     $("#send").click(sendCoin);
-    $("#bobClaim").click(claimCoin);
+    $("#claim").click(claimCoin);
     //$("#carolClaim").click(claimCoin(2,window.carolAddr));
 
 });
@@ -32359,16 +32572,14 @@ window.addEventListener('load', function() {
 __webpack_require__(37);
 
 
-
-const sendCoin = function() {
+const createCovenant = function() {
     let deployed;
-    return Splitter.deployed(window.bobAddr, window.carolAddr, { from: window.account})
+
+    return Splitter.deployed()
         .then(_deployed => {
-          console.log(deployed);
             deployed = _deployed;
             // .sendTransaction so that we get the txHash immediately.
-            return _deployed.sendCoin.sendTransaction(
-                { from: window.account, value: $("input[name='amount']").val() });
+            return deployed.createCovenant.sendTransaction({ from: $("input[id='owner']").val() });
         })
         .then(txHash => {
             $("#status").html("Transaction on the way " + txHash);
@@ -32387,7 +32598,90 @@ const sendCoin = function() {
                 $("#status").html("There was an error in the tx execution");
             } else {
                 // Format the event nicely.
-                console.log(deployed.SplitCoinTrans().formatter(receipt.logs[0]).args);
+                console.log(deployed.ConventCreated().formatter(receipt.logs[0]).args);
+                $("#status").html("Transfer executed");
+            }
+            // Make sure we update the UI.
+            return refreshBalances(deployed);
+          })
+        .catch(e => {
+            $("#status").html(e.toString());
+            console.error(e);
+        });
+};
+
+
+const addBeneficiary = function() {
+    let deployed;
+
+
+    return Splitter.deployed()
+        .then(_deployed => {
+            deployed = _deployed;
+            // .sendTransaction so that we get the txHash immediately.
+            return deployed.addBeneficiary.sendTransaction($("input[id='beneficiary']").val()
+                                                            ,{ from: $("input[id='owner']").val(),
+                                                                gas:120000 });
+        })
+        .then(txHash => {
+            $("#status").html("Transaction on the way " + txHash);
+            // Now we wait for the tx to be mined.
+            const tryAgain = () => web3.eth.getTransactionReceiptPromise(txHash)
+                .then(receipt => receipt !== null ?
+                    receipt :
+                    // Let's hope we don't hit the max call stack depth
+                    Promise.delay(500).then(tryAgain));
+            return tryAgain();
+        })
+        .then(receipt => {
+            if (receipt.logs.length == 0) {
+                console.error("Empty logs");
+                console.error(receipt);
+                $("#status").html("There was an error in the tx execution");
+            } else {
+                // Format the event nicely.
+                console.log(deployed.BeneficiaryAdded().formatter(receipt.logs[0]).args);
+                $("#status").html("Transfer executed");
+            }
+            // Make sure we update the UI.
+            return refreshBalances(deployed);
+          })
+        .catch(e => {
+            $("#status").html(e.toString());
+            console.error(e);
+        });
+};
+
+const sendCoin = function() {
+    let deployed;
+    console.log($("input[id='owner']").val());
+    console.log($("amount").val());
+    return Splitter.deployed()
+        .then(_deployed => {
+          console.log(deployed);
+            deployed = _deployed;
+            // .sendTransaction so that we get the txHash immediately.
+            return _deployed.sendCoin.sendTransaction(
+                { from: $("input[id='owner']").val(), value: $("input[id='amount']").val() });
+        })
+        .then(txHash => {
+            $("#status").html("Transaction on the way " + txHash);
+            // Now we wait for the tx to be mined.
+            const tryAgain = () => web3.eth.getTransactionReceiptPromise(txHash)
+                .then(receipt => receipt !== null ?
+                    receipt :
+                    // Let's hope we don't hit the max call stack depth
+                    Promise.delay(500).then(tryAgain));
+            return tryAgain();
+        })
+        .then(receipt => {
+            if (receipt.logs.length == 0) {
+                console.error("Empty logs");
+                console.error(receipt);
+                $("#status").html("There was an error in the tx execution");
+            } else {
+                // Format the event nicely.
+                console.log(deployed.CoinSentAndSplit().formatter(receipt.logs[0]).args);
                 $("#status").html("Transfer executed");
             }
             // Make sure we update the UI.
@@ -32402,12 +32696,11 @@ const sendCoin = function() {
 
 const claimCoin = function() {
     let deployed;
-    return Splitter.deployed(window.bobAddr, window.carolAddr, { from: window.account})
+    return Splitter.deployed()
         .then(_deployed => {
             deployed = _deployed;
-            console.log(window.bobAddr);
             // .sendTransaction so that we get the txHash immediately.
-            return deployed.claimAvailable.sendTransaction(1, { from: window.bobAddr });
+            return deployed.claimAvailable.sendTransaction($("input[id='owner']").val(), { from: $("input[id='claimAddr']").val() });
         })
         .then(txHash => {
             $("#status").html("Transaction on the way " + txHash);
@@ -32426,7 +32719,7 @@ const claimCoin = function() {
                 $("#status").html("There was an error in the tx execution");
             } else {
                 // Format the event nicely.
-                console.log(deployed.Claimed().formatter(receipt.logs[0]).args);
+                console.log(deployed.CoinClaimed().formatter(receipt.logs[0]).args);
                 $("#status").html("Transfer executed");
             }
             // Make sure we update the UI.

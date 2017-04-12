@@ -28,24 +28,32 @@ const refreshBalances = function(splitter) {
   return  web3.eth.getBalancePromise(splitter.address)
             .then(function(balance) {
               $("#balance").html(balance.toString(10));
-              return  web3.eth.getBalance(window.bobAddr);
+              return  web3.eth.getBalancePromise(window.account0);
             }).then(function(balance) {
-              $("#bobsBalance").html(balance.toString(10));
-              return  web3.eth.getBalance(window.carolAddr);
+              $("#acc0Balance").html(balance.toString(10));
+              return  web3.eth.getBalancePromise(window.account1);
             }).then(function(balance) {
-              $("#carolsBalance").html(balance.toString(10));
-              return splitter.getAvailable.call(bobsId);
+              $("#acc1Balance").html(balance.toString(10));
+              return  web3.eth.getBalancePromise(window.account2);
             }).then(function(balance) {
-              $("#bobsAvailableBalance").html(balance.toString(10));
-              return splitter.getAvailable.call(carolsId);
+              $("#acc2Balance").html(balance.toString(10));
+              return splitter.getBeneficiaryDetail.call(window.account0, { from: window.account1});
             }).then(function(balance) {
-              $("#carolsAvailableBalance").html(balance.toString(10));
-              return splitter.getTotal.call(bobsId);
+              $("#ben1AvailableBalance").html(balance[0].toString(10));
+              $("#ben1TotalBalance").html(balance[1].toString(10));
+              return splitter.getBeneficiaryDetail.call(window.account0, { from: window.account2});
             }).then(function(balance) {
-              $("#bobsTotalBalance").html(balance.toString(10));
-              return splitter.getTotal.call(carolsId);
-            }).then(function(balance) {
-              $("#carolsTotalBalance").html(balance.toString(10));
+              $("#ben2AvailableBalance").html(balance[0].toString(10));
+              $("#ben2TotalBalance").html(balance[1].toString(10));
+                //return splitter.getAvailable.call(carolsId);
+            //}).then(function(balance) {
+            //  $("#carolsAvailableBalance").html(balance.toString(10));
+            //  return splitter.getTotal.call(bobsId);
+          //}).then(function(balance) {
+          //    $("#bobsTotalBalance").html(balance.toString(10));
+          //    return splitter.getTotal.call(carolsId);
+          //  }).then(function(balance) {
+          //    $("#carolsTotalBalance").html(balance.toString(10));
             });
 
 }
@@ -56,14 +64,22 @@ window.addEventListener('load', function() {
 
     web3.eth.getAccountsPromise()
         .then(accounts => {
-            window.account = accounts[0];
-            window.bobAddr = accounts[1];
-            window.carolAddr = accounts[2];
-            $("#bobsAddress").html(accounts[bobsId]);
-            $("#carolsAddress").html(accounts[carolsId]);
-            return Splitter.deployed(window.bobAddr, window.carolAddr, { from: window.account});
+
+            window.account0 = accounts[0];
+            window.account1 = accounts[1];
+            window.account2 = accounts[2];
+
+            $("#accounts").html(accounts[0] + " : " + accounts[1] + " : " + accounts[2]);
+            $("#owner").val(accounts[0]);
+            $("#beneficiary").val(accounts[1]);
+            $("#claimAddr").val(accounts[1]);
+
+            $("#acc0Address").html(accounts[0]);
+            $("#acc1Address").html(accounts[1]);
+            $("#acc2Address").html(accounts[2]);
+            return Splitter.deployed();
           }).then(function(instance) {
-            console.log(instance);
+            //console.log(instance);
             $("#address").html(instance.address);
             return refreshBalances(instance);
           })
@@ -72,8 +88,10 @@ window.addEventListener('load', function() {
               console.error(e);
           });
 
+    $("#create").click(createCovenant);
+    $("#add").click(addBeneficiary);
     $("#send").click(sendCoin);
-    $("#bobClaim").click(claimCoin);
+    $("#claim").click(claimCoin);
     //$("#carolClaim").click(claimCoin(2,window.carolAddr));
 
 });
@@ -81,16 +99,14 @@ window.addEventListener('load', function() {
 require("file-loader?name=../index.html!../index.html");
 
 
-
-const sendCoin = function() {
+const createCovenant = function() {
     let deployed;
-    return Splitter.deployed(window.bobAddr, window.carolAddr, { from: window.account})
+
+    return Splitter.deployed()
         .then(_deployed => {
-          console.log(deployed);
             deployed = _deployed;
             // .sendTransaction so that we get the txHash immediately.
-            return _deployed.sendCoin.sendTransaction(
-                { from: window.account, value: $("input[name='amount']").val() });
+            return deployed.createCovenant.sendTransaction({ from: $("input[id='owner']").val() });
         })
         .then(txHash => {
             $("#status").html("Transaction on the way " + txHash);
@@ -109,7 +125,90 @@ const sendCoin = function() {
                 $("#status").html("There was an error in the tx execution");
             } else {
                 // Format the event nicely.
-                console.log(deployed.SplitCoinTrans().formatter(receipt.logs[0]).args);
+                console.log(deployed.ConventCreated().formatter(receipt.logs[0]).args);
+                $("#status").html("Transfer executed");
+            }
+            // Make sure we update the UI.
+            return refreshBalances(deployed);
+          })
+        .catch(e => {
+            $("#status").html(e.toString());
+            console.error(e);
+        });
+};
+
+
+const addBeneficiary = function() {
+    let deployed;
+
+
+    return Splitter.deployed()
+        .then(_deployed => {
+            deployed = _deployed;
+            // .sendTransaction so that we get the txHash immediately.
+            return deployed.addBeneficiary.sendTransaction($("input[id='beneficiary']").val()
+                                                            ,{ from: $("input[id='owner']").val(),
+                                                                gas:120000 });
+        })
+        .then(txHash => {
+            $("#status").html("Transaction on the way " + txHash);
+            // Now we wait for the tx to be mined.
+            const tryAgain = () => web3.eth.getTransactionReceiptPromise(txHash)
+                .then(receipt => receipt !== null ?
+                    receipt :
+                    // Let's hope we don't hit the max call stack depth
+                    Promise.delay(500).then(tryAgain));
+            return tryAgain();
+        })
+        .then(receipt => {
+            if (receipt.logs.length == 0) {
+                console.error("Empty logs");
+                console.error(receipt);
+                $("#status").html("There was an error in the tx execution");
+            } else {
+                // Format the event nicely.
+                console.log(deployed.BeneficiaryAdded().formatter(receipt.logs[0]).args);
+                $("#status").html("Transfer executed");
+            }
+            // Make sure we update the UI.
+            return refreshBalances(deployed);
+          })
+        .catch(e => {
+            $("#status").html(e.toString());
+            console.error(e);
+        });
+};
+
+const sendCoin = function() {
+    let deployed;
+    console.log($("input[id='owner']").val());
+    console.log($("amount").val());
+    return Splitter.deployed()
+        .then(_deployed => {
+          console.log(deployed);
+            deployed = _deployed;
+            // .sendTransaction so that we get the txHash immediately.
+            return _deployed.sendCoin.sendTransaction(
+                { from: $("input[id='owner']").val(), value: $("input[id='amount']").val() });
+        })
+        .then(txHash => {
+            $("#status").html("Transaction on the way " + txHash);
+            // Now we wait for the tx to be mined.
+            const tryAgain = () => web3.eth.getTransactionReceiptPromise(txHash)
+                .then(receipt => receipt !== null ?
+                    receipt :
+                    // Let's hope we don't hit the max call stack depth
+                    Promise.delay(500).then(tryAgain));
+            return tryAgain();
+        })
+        .then(receipt => {
+            if (receipt.logs.length == 0) {
+                console.error("Empty logs");
+                console.error(receipt);
+                $("#status").html("There was an error in the tx execution");
+            } else {
+                // Format the event nicely.
+                console.log(deployed.CoinSentAndSplit().formatter(receipt.logs[0]).args);
                 $("#status").html("Transfer executed");
             }
             // Make sure we update the UI.
@@ -124,12 +223,11 @@ const sendCoin = function() {
 
 const claimCoin = function() {
     let deployed;
-    return Splitter.deployed(window.bobAddr, window.carolAddr, { from: window.account})
+    return Splitter.deployed()
         .then(_deployed => {
             deployed = _deployed;
-            console.log(window.bobAddr);
             // .sendTransaction so that we get the txHash immediately.
-            return deployed.claimAvailable.sendTransaction(1, { from: window.bobAddr });
+            return deployed.claimAvailable.sendTransaction($("input[id='owner']").val(), { from: $("input[id='claimAddr']").val() });
         })
         .then(txHash => {
             $("#status").html("Transaction on the way " + txHash);
@@ -148,7 +246,7 @@ const claimCoin = function() {
                 $("#status").html("There was an error in the tx execution");
             } else {
                 // Format the event nicely.
-                console.log(deployed.Claimed().formatter(receipt.logs[0]).args);
+                console.log(deployed.CoinClaimed().formatter(receipt.logs[0]).args);
                 $("#status").html("Transfer executed");
             }
             // Make sure we update the UI.
