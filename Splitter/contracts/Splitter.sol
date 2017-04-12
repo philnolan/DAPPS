@@ -4,15 +4,15 @@ import "./Owned.sol";
 contract Splitter is Owned {
 
 	struct Beneficiary {
-	    uint available;		//what is up for grabs
+	  uint available;		//what is up for grabs
 		uint totalClaimed;	//total amount user has grabbed the dosh
 		bool isActive;  	//to identify if we have set this address via correct route
 	}
 
 	struct Covenant {
-	    mapping (address => Beneficiary) beneficiaries;
-	    mapping (uint => address) beneficiariesMap;  //mapper to address array to help send coin
-	    uint countBeneficiaries;
+	  mapping (address => Beneficiary) beneficiaries;
+	  mapping (uint => address) beneficiariesMap;  //mapper to address array to help send coin
+	  uint countBeneficiaries;
 		uint totalSent;
 	}
 
@@ -30,11 +30,12 @@ contract Splitter is Owned {
 
 	function createCovenant () {
 
-			//todo:  ensure same address cannot create a second
-	    covenants[msg.sender] = Covenant({
+		//todo:  ensure same address cannot create a second
+	  covenants[msg.sender] = Covenant({
 	        totalSent: 0, countBeneficiaries:0
-	    });
-			ConventCreated(msg.sender);
+	  });
+
+		ConventCreated(msg.sender);
 	}
 
 	function addBeneficiary (address beneficiaryAddr) onlyowner {
@@ -102,7 +103,7 @@ contract Splitter is Owned {
 
 	function claimAvailable(address covenantOwner) returns(bool successful)  {
 
-	    //test to ensure sender is a beneficiary, throw if not
+	  //test to ensure sender is a beneficiary, throw if not
 		if (!covenants[covenantOwner].beneficiaries[msg.sender].isActive) throw;
 
 		var available = covenants[covenantOwner].beneficiaries[msg.sender].available;
@@ -126,8 +127,8 @@ contract Splitter is Owned {
 
 	function kill() {
 		//if originator then destruct and fund
-        if (msg.sender == owner) {
-            selfdestruct(owner);
-        }
+    if (msg.sender == owner) {
+        selfdestruct(owner);
+  	}
 	}
 }
