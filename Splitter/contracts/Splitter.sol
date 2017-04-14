@@ -1,176 +1,179 @@
-pragma solidity ^0.4.4;
+pragma solidity ^ 0.4 .4;
 contract Splitter {
 
-	struct Beneficiary {
-		uint available;		//what is up for grabs
-		uint totalClaimed;	//total amount user has grabbed the dosh
-		bool isActive;  	//to identify if we have set this address via correct route
-	}
+    struct Beneficiary {
+        uint available; //what is up for grabs
+        uint totalClaimed; //total amount user has grabbed the dosh
+        bool isActive; //to identify if we have set this address via correct route
+    }
 
-	struct Covenant {
-		mapping (address => Beneficiary) beneficiaries;
-		mapping (uint => address) beneficiariesMap;  //mapper to address array to help send coin
-		uint countBeneficiaries;
-		uint totalSent;
-		uint totalClaimed;
-		bool isActive;  	//to identify if the active
-	}
+    struct Covenant {
+        mapping(address => Beneficiary) beneficiaries;
+        mapping(uint => address) beneficiariesMap; //mapper to address array to help send coin
+        uint countBeneficiaries;
+        uint totalSent;
+        uint totalClaimed;
+        bool isActive; //to identify if the active
+    }
 
-	//lets implement a max for the time being to ease complexity
-	uint constant maxBeneficiaries = 2;
+    //lets implement a max for the time being to ease complexity
+    uint constant maxBeneficiaries = 2;
 
-	mapping (address => Covenant) covenants;
+    mapping(address => Covenant) covenants;
 
-	event CovenantCreated(address addr);
-	event BeneficiaryAdded(address owner, address beneficiary);
-	event CoinSentAndSplit(uint value, uint split,  uint remainder);
-	event CoinClaimed(address id, address id2, uint value);
-	event CovenantClosed(address id, uint value);
+    event CovenantCreated(address addr);
+    event BeneficiaryAdded(address owner, address beneficiary);
+    event CoinSentAndSplit(uint value, uint split, uint remainder);
+    event CoinClaimed(address id, address id2, uint value);
+    event CovenantClosed(address id, uint value);
 
-	function Splitter() {}
+    function Splitter() {}
 
-	function createCovenant () {
+    function createCovenant() {
 
-		//test for beneficiary already been added
-		if (covenants[msg.sender].isActive) throw;
+        //test for beneficiary already been added
+        if (covenants[msg.sender].isActive) throw;
 
-		covenants[msg.sender] = Covenant({
-	        totalSent: 0,
-	        totalClaimed: 0,
-	        countBeneficiaries: 0,
-	        isActive: true
-		});
+        covenants[msg.sender] = Covenant({
+            totalSent: 0,
+            totalClaimed: 0,
+            countBeneficiaries: 0,
+            isActive: true
+        });
 
-		CovenantCreated(msg.sender);
-	}
+        CovenantCreated(msg.sender);
+    }
 
-	function getCovenantDetail() constant returns(uint countBeneficiaries,
-											uint totalSent,
-											uint totalClaimed) {
+    function getCovenantDetail() constant returns(uint countBeneficiaries,
+        uint totalSent,
+        uint totalClaimed) {
 
-		//throw if not active
-		if (!covenants[msg.sender].isActive) throw;
+        //throw if not active
+        if (!covenants[msg.sender].isActive) throw;
 
-		return (covenants[msg.sender].countBeneficiaries,
-							covenants[msg.sender].totalSent,
-							covenants[msg.sender].totalClaimed);
-	}
-
-
-	function addBeneficiary (address beneficiaryAddr) returns (bool successful) {
-		//throw if not active
-		if (!covenants[msg.sender].isActive) throw;
-
-		//have we exceeded max
-		if (maxBeneficiaries == covenants[msg.sender].countBeneficiaries) throw;
-
-		//test for beneficiary already been added
-		if (covenants[msg.sender].beneficiaries[beneficiaryAddr].isActive) throw;
-
-		var counter = covenants[msg.sender].countBeneficiaries ++;
-		covenants[msg.sender].beneficiaries[beneficiaryAddr] = Beneficiary({available:0, totalClaimed:0, isActive:true});
-		covenants[msg.sender].beneficiariesMap[counter] = beneficiaryAddr;
-
-		BeneficiaryAdded(msg.sender, beneficiaryAddr);
-	}
+        return (covenants[msg.sender].countBeneficiaries,
+            covenants[msg.sender].totalSent,
+            covenants[msg.sender].totalClaimed);
+    }
 
 
-	//returns array of beneficiary detail - called by them and passing in owner
-	function getBeneficiaryDetail(address covenantOwner) constant returns(uint available, uint totalClaimed) {
-		//test to ensure sender is a beneficiary, throw if not
-		if (!covenants[covenantOwner].beneficiaries[msg.sender].isActive) throw;
+    function addBeneficiary(address beneficiaryAddr) returns(bool successful) {
+        //throw if not active
+        if (!covenants[msg.sender].isActive) throw;
 
-		return  (covenants[covenantOwner].beneficiaries[msg.sender].available,
-					covenants[covenantOwner].beneficiaries[msg.sender].totalClaimed);
+        //have we exceeded max
+        if (maxBeneficiaries == covenants[msg.sender].countBeneficiaries) throw;
 
-	}
+        //test for beneficiary already been added
+        if (covenants[msg.sender].beneficiaries[beneficiaryAddr].isActive) throw;
 
-	function sendCoin() payable returns(bool successful)   {
+        var counter = covenants[msg.sender].countBeneficiaries++;
+        covenants[msg.sender].beneficiaries[beneficiaryAddr] = Beneficiary({
+            available: 0,
+            totalClaimed: 0,
+            isActive: true
+        });
+        covenants[msg.sender].beneficiariesMap[counter] = beneficiaryAddr;
 
-		//thow if not active
-		if (!covenants[msg.sender].isActive) throw;
+        BeneficiaryAdded(msg.sender, beneficiaryAddr);
+    }
 
-		//if they have sent the lowest amount possible which can not be shared
-		if (msg.value < 1 wei) throw;
 
-    	//we have parties to share to?
-    	if (covenants[msg.sender].countBeneficiaries == 0) throw;
+    //returns array of beneficiary detail - called by them and passing in owner
+    function getBeneficiaryDetail(address covenantOwner) constant returns(uint available, uint totalClaimed) {
+        //test to ensure sender is a beneficiary, throw if not
+        if (!covenants[covenantOwner].beneficiaries[msg.sender].isActive) throw;
 
-		//calculate share and remainder
-		var coin = msg.value;
-		var countBeneficiaries = covenants[msg.sender].countBeneficiaries;
-		var perBenificiary = coin / countBeneficiaries;
-		var totalToShare = perBenificiary * countBeneficiaries;
-		var remainder = coin - totalToShare;
+        return (covenants[covenantOwner].beneficiaries[msg.sender].available,
+            covenants[covenantOwner].beneficiaries[msg.sender].totalClaimed);
 
-		//share between beneficiaries
-		var counter = covenants[msg.sender].countBeneficiaries;
-		for(uint i=0; i < counter; i++) {
-			var idxAddr = covenants[msg.sender].beneficiariesMap[i];
-        	covenants[msg.sender].beneficiaries[idxAddr].available += perBenificiary;
+    }
+
+    function sendCoin() payable returns(bool successful) {
+
+        //thow if not active
+        if (!covenants[msg.sender].isActive) throw;
+
+        //if they have sent the lowest amount possible which can not be shared
+        if (msg.value < 1 wei) throw;
+
+        //we have parties to share to?
+        if (covenants[msg.sender].countBeneficiaries == 0) throw;
+
+        //calculate share and remainder
+        var coin = msg.value;
+        var countBeneficiaries = covenants[msg.sender].countBeneficiaries;
+        var perBenificiary = coin / countBeneficiaries;
+        var totalToShare = perBenificiary * countBeneficiaries;
+        var remainder = coin - totalToShare;
+
+        //share between beneficiaries
+        var counter = covenants[msg.sender].countBeneficiaries;
+        for (uint i = 0; i < counter; i++) {
+            var idxAddr = covenants[msg.sender].beneficiariesMap[i];
+            covenants[msg.sender].beneficiaries[idxAddr].available += perBenificiary;
         }
 
-		//increment covenant total spend
-		covenants[msg.sender].totalSent += totalToShare;
+        //increment covenant total spend
+        covenants[msg.sender].totalSent += totalToShare;
 
-		//give back remainder
-		if (remainder > 0)
-			{
-				if (!msg.sender.send(remainder)) throw;
-			}
+        //give back remainder
+        if (remainder > 0) {
+            if (!msg.sender.send(remainder)) throw;
+        }
 
-		//write event
-		CoinSentAndSplit(coin, perBenificiary, remainder);
+        //write event
+        CoinSentAndSplit(coin, perBenificiary, remainder);
 
-		return true;
-	}
+        return true;
+    }
 
-	function claimAvailable(address covenantOwner) returns(bool successful)  {
+    function claimAvailable(address covenantOwner) returns(bool successful) {
 
-		//test to ensure sender is a beneficiary, throw if not
-		if (!covenants[covenantOwner].beneficiaries[msg.sender].isActive) throw;
+        //test to ensure sender is a beneficiary, throw if not
+        if (!covenants[covenantOwner].beneficiaries[msg.sender].isActive) throw;
 
-		var available = covenants[covenantOwner].beneficiaries[msg.sender].available;
+        var available = covenants[covenantOwner].beneficiaries[msg.sender].available;
 
-		//throw if nothing available or there is more than in contracts pot
-		if (available == 0) throw;
-		if (this.balance < available) throw;
+        //throw if nothing available or there is more than in contracts pot
+        if (available == 0) throw;
+        if (this.balance < available) throw;
 
-		//set party detail
-		covenants[covenantOwner].beneficiaries[msg.sender].available = 0;
-		covenants[covenantOwner].beneficiaries[msg.sender].totalClaimed += available;
-		covenants[covenantOwner].totalClaimed += available;
+        //set party detail
+        covenants[covenantOwner].beneficiaries[msg.sender].available = 0;
+        covenants[covenantOwner].beneficiaries[msg.sender].totalClaimed += available;
+        covenants[covenantOwner].totalClaimed += available;
 
-		//fingers crossed
-		if (!msg.sender.send(available)) throw;
+        //fingers crossed
+        if (!msg.sender.send(available)) throw;
 
-		//write log
-		CoinClaimed(msg.sender, covenantOwner, available);
+        //write log
+        CoinClaimed(msg.sender, covenantOwner, available);
 
-		return true;
-	}
+        return true;
+    }
 
-	function closeCovenant()  returns(bool successful) {
+    function closeCovenant() returns(bool successful) {
 
-		//thow if not active
-		if (!covenants[msg.sender].isActive) throw;
+        //thow if not active
+        if (!covenants[msg.sender].isActive) throw;
 
-    	var sent = covenants[msg.sender].totalSent;
-    	var claimed = covenants[msg.sender].totalClaimed;
-    	var total = sent - claimed;
+        var sent = covenants[msg.sender].totalSent;
+        var claimed = covenants[msg.sender].totalClaimed;
+        var total = sent - claimed;
 
-    	if (this.balance < total) throw;
+        if (this.balance < total) throw;
 
-    	covenants[msg.sender].totalSent = 0;
-    	covenants[msg.sender].totalClaimed = 0;
-		covenants[msg.sender].isActive = false;
+        covenants[msg.sender].totalSent = 0;
+        covenants[msg.sender].totalClaimed = 0;
+        covenants[msg.sender].isActive = false;
 
-		//fingers crossed
-		if (!msg.sender.send(total)) throw;
+        //fingers crossed
+        if (!msg.sender.send(total)) throw;
 
-		//write log
-		CovenantClosed(msg.sender, total);
+        //write log
+        CovenantClosed(msg.sender, total);
 
-		return true;
-	}
+        return true;
+    }
 }
