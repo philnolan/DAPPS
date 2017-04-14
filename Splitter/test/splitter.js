@@ -1,47 +1,7 @@
 var Splitter = artifacts.require("./Splitter.sol");
 
 contract('Splitter', function(accounts) {
-
-  var expectedExceptionPromise = function (action, gasToUse) {
-	   return new Promise(function (resolve, reject) {
-	      try {
-	         resolve(action());
-	      } catch(e) {
-	         reject(e);
-	      }
-	    })
-	    .then(function (txn) {
-	       // https://gist.github.com/xavierlepretre/88682e871f4ad07be4534ae560692ee6
-	        return web3.eth.getTransactionReceiptMined(txn);
-	    })
-	    .then(function (receipt) {
-	       // We are in Geth
-         assert.equal(receipt.gasUsed, gasToUse, "should have used all the gas");
-	    })
-	    .catch(function (e) {
-	       if ((e + "").indexOf("invalid JUMP") || (e + "").indexOf("out of gas") > -1) {
-	          // We are in TestRPC
-	       }   else if ((e + "").indexOf("please check your gas amount") > -1) {
-	          // We are in Geth for a deployment
-	       } else {
-	            throw e;
-	      }
-	     });
-	   };
-
-	    var splitter
-
-//	   beforeEach(function() {
-  //      return Splitter.new().then(function(i){
-    //    	splitter = i
-    //      console.log(splitter.address);
-	  //      })
-    //	})
-
-
-	//it("", function() {
-	//it("should put 0 into each beneficiary balance upon covenant creation", function() {
-
+  var splitter
 
 	it("should return zero'd covenant upon creation", function() {
 
