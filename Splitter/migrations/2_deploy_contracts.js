@@ -1,4 +1,5 @@
 var Splitter = artifacts.require("./Splitter.sol");
+var Splitter0 = artifacts.require("./Splitter0.sol");
 //const Web3 = require("web3");
 //const Promise = require("bluebird");
 
@@ -18,4 +19,5 @@ module.exports = function(deployer) {
 
     //deployer.deploy(Splitter, bob, carol)
     deployer.deploy(Splitter)
+    deployer.deploy(Splitter0)
 };
