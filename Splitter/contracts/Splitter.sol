@@ -1,19 +1,19 @@
-
 pragma solidity ^0.4.4;
-import "./Owned.sol";
-contract Splitter is Owned {
+contract Splitter {
 
 	struct Beneficiary {
-	  uint available;		//what is up for grabs
+		uint available;		//what is up for grabs
 		uint totalClaimed;	//total amount user has grabbed the dosh
 		bool isActive;  	//to identify if we have set this address via correct route
 	}
 
 	struct Covenant {
-	  mapping (address => Beneficiary) beneficiaries;
-	  mapping (uint => address) beneficiariesMap;  //mapper to address array to help send coin
-	  uint countBeneficiaries;
+		mapping (address => Beneficiary) beneficiaries;
+		mapping (uint => address) beneficiariesMap;  //mapper to address array to help send coin
+		uint countBeneficiaries;
 		uint totalSent;
+		uint totalClaimed;
+		bool isActive;  	//to identify if the active
 	}
 
 	//lets implement a max for the time being to ease complexity
@@ -21,24 +21,45 @@ contract Splitter is Owned {
 
 	mapping (address => Covenant) covenants;
 
-	event ConventCreated(address addr);
+	event CovenantCreated(address addr);
 	event BeneficiaryAdded(address owner, address beneficiary);
 	event CoinSentAndSplit(uint value, uint split,  uint remainder);
 	event CoinClaimed(address id, address id2, uint value);
+	event CovenantClosed(address id, uint value);
 
 	function Splitter() {}
 
 	function createCovenant () {
 
-		//todo:  ensure same address cannot create a second
-	  covenants[msg.sender] = Covenant({
-	        totalSent: 0, countBeneficiaries:0
-	  });
+		//test for beneficiary already been added
+		if (covenants[msg.sender].isActive) throw;
 
-		ConventCreated(msg.sender);
+		covenants[msg.sender] = Covenant({
+	        totalSent: 0,
+	        totalClaimed: 0,
+	        countBeneficiaries: 0,
+	        isActive: true
+		});
+
+		CovenantCreated(msg.sender);
 	}
 
-	function addBeneficiary (address beneficiaryAddr) onlyowner {
+	function getCovenantDetail() constant returns(uint countBeneficiaries,
+											uint totalSent,
+											uint totalClaimed) {
+
+		//throw if not active
+		if (!covenants[msg.sender].isActive) throw;
+
+		return (covenants[msg.sender].countBeneficiaries,
+							covenants[msg.sender].totalSent,
+							covenants[msg.sender].totalClaimed);
+	}
+
+
+	function addBeneficiary (address beneficiaryAddr) returns (bool successful) {
+		//throw if not active
+		if (!covenants[msg.sender].isActive) throw;
 
 		//have we exceeded max
 		if (maxBeneficiaries == covenants[msg.sender].countBeneficiaries) throw;
@@ -46,8 +67,8 @@ contract Splitter is Owned {
 		//test for beneficiary already been added
 		if (covenants[msg.sender].beneficiaries[beneficiaryAddr].isActive) throw;
 
-	  var counter = covenants[msg.sender].countBeneficiaries ++;
-	  covenants[msg.sender].beneficiaries[beneficiaryAddr] = Beneficiary({available:0, totalClaimed:0, isActive:true});
+		var counter = covenants[msg.sender].countBeneficiaries ++;
+		covenants[msg.sender].beneficiaries[beneficiaryAddr] = Beneficiary({available:0, totalClaimed:0, isActive:true});
 		covenants[msg.sender].beneficiariesMap[counter] = beneficiaryAddr;
 
 		BeneficiaryAdded(msg.sender, beneficiaryAddr);
@@ -64,13 +85,16 @@ contract Splitter is Owned {
 
 	}
 
-	function sendCoin() onlyowner payable returns(bool successful)   {
+	function sendCoin() payable returns(bool successful)   {
+
+		//thow if not active
+		if (!covenants[msg.sender].isActive) throw;
 
 		//if they have sent the lowest amount possible which can not be shared
 		if (msg.value < 1 wei) throw;
 
-    //we have parties to share to?
-    if (covenants[msg.sender].countBeneficiaries == 0) throw;
+    	//we have parties to share to?
+    	if (covenants[msg.sender].countBeneficiaries == 0) throw;
 
 		//calculate share and remainder
 		var coin = msg.value;
@@ -103,7 +127,7 @@ contract Splitter is Owned {
 
 	function claimAvailable(address covenantOwner) returns(bool successful)  {
 
-	  //test to ensure sender is a beneficiary, throw if not
+		//test to ensure sender is a beneficiary, throw if not
 		if (!covenants[covenantOwner].beneficiaries[msg.sender].isActive) throw;
 
 		var available = covenants[covenantOwner].beneficiaries[msg.sender].available;
@@ -115,6 +139,7 @@ contract Splitter is Owned {
 		//set party detail
 		covenants[covenantOwner].beneficiaries[msg.sender].available = 0;
 		covenants[covenantOwner].beneficiaries[msg.sender].totalClaimed += available;
+		covenants[covenantOwner].totalClaimed += available;
 
 		//fingers crossed
 		if (!msg.sender.send(available)) throw;
@@ -125,10 +150,27 @@ contract Splitter is Owned {
 		return true;
 	}
 
-	function kill() {
-		//if originator then destruct and fund
-    if (msg.sender == owner) {
-        selfdestruct(owner);
-  	}
+	function closeCovenant()  returns(bool successful) {
+
+		//thow if not active
+		if (!covenants[msg.sender].isActive) throw;
+
+    	var sent = covenants[msg.sender].totalSent;
+    	var claimed = covenants[msg.sender].totalClaimed;
+    	var total = sent - claimed;
+
+    	if (this.balance < total) throw;
+
+    	covenants[msg.sender].totalSent = 0;
+    	covenants[msg.sender].totalClaimed = 0;
+		covenants[msg.sender].isActive = false;
+
+		//fingers crossed
+		if (!msg.sender.send(total)) throw;
+
+		//write log
+		CovenantClosed(msg.sender, total);
+
+		return true;
 	}
 }

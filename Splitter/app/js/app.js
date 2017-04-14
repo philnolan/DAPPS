@@ -125,7 +125,7 @@ const createCovenant = function() {
                 $("#status").html("There was an error in the tx execution");
             } else {
                 // Format the event nicely.
-                console.log(deployed.ConventCreated().formatter(receipt.logs[0]).args);
+                console.log(deployed.CovenantCreated().formatter(receipt.logs[0]).args);
                 $("#status").html("Transfer executed");
             }
             // Make sure we update the UI.
