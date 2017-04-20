@@ -100,10 +100,16 @@
     "1492156938173": {
       "events": {},
       "links": {},
-      "address": "0xb9013f9b1e4ef36aaf10e149e81711350636cbd9",
-      "updated_at": 1492204245846
+      "address": "0xb7196e64d80401bc630a9b6a19fab5d3fece9475",
+      "updated_at": 1492543615660
+    },
+    "1492678233445": {
+      "events": {},
+      "links": {},
+      "address": "0x99e484a43be15b8cf3a54acd717aa2e4360a7c71",
+      "updated_at": 1492683237708
     }
   },
   "schema_version": "0.0.5",
-  "updated_at": 1492204245846
+  "updated_at": 1492683237708
 }

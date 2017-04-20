@@ -7,7 +7,7 @@ contract Owned {
 		owner = msg.sender;
 	}
 
-	modifier onlyowner {
+	modifier onlyOwner {
 		if (msg.sender != owner) throw;
 		_;
 	}

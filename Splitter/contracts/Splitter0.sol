@@ -1,6 +1,13 @@
 pragma solidity ^ 0.4 .4;
-import "./Owned.sol";
-contract Splitter0 is Owned {
+
+contract Splitter0  {
+
+address owner;
+  modifier onlyOwner {
+     if (msg.sender != owner) throw;
+    _;
+  }
+
 
     struct Beneficiary {
         address addr;
@@ -18,6 +25,7 @@ contract Splitter0 is Owned {
     event CoinClaimed(address id, uint value);
 
     function Splitter0(address bobAddr, address carolAddr) {
+        owner = msg.sender;
         bob = Beneficiary({
             addr: bobAddr,
             available: 0,
@@ -42,7 +50,7 @@ contract Splitter0 is Owned {
         }
     }
 
-    function sendCoin() onlyowner payable returns(bool successful) {
+    function sendCoin() onlyOwner payable returns(bool successful) {
 
         //if they have sent the lowest amount possible which can not be shared
         if (msg.value < 1 wei) throw;

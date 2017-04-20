@@ -1,7 +1,7 @@
 pragma solidity ^ 0.4 .0;
 
 //base bazar
-// single owner
+// single owner/merchant
 // no order processing
 
 contract Bazar {
@@ -21,6 +21,15 @@ contract Bazar {
     }
     mapping(uint => Product) products;
     uint[] private productsIndex;
+
+    enum OrderStages {
+            Placed,
+            Complete,
+            AnotherStage,
+            AreWeDoneYet,
+            Finished
+        }
+
 
     uint private stockValue;
 

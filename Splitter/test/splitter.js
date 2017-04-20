@@ -1,22 +1,58 @@
-var Splitter = artifacts.require("./Splitter.sol");
+const Splitter = artifacts.require("./Splitter.sol");
+const Promise = require("bluebird");
+
+
+web3.eth.getTransactionReceiptMined = function (txnHash, interval) {
+    var transactionReceiptAsync;
+    interval |= 500;
+    transactionReceiptAsync = function(txnHash, resolve, reject) {
+        try {
+            var receipt = web3.eth.getTransactionReceipt(txnHash);
+            if (receipt == null) {
+                setTimeout(function () {
+                    transactionReceiptAsync(txnHash, resolve, reject);
+                }, interval);
+            } else {
+                resolve(receipt);
+            }
+        } catch(e) {
+            reject(e);
+        }
+    };
+
+    return new Promise(function (resolve, reject) {
+        transactionReceiptAsync(txnHash, resolve, reject);
+    });
+};
+
+
+
 
 contract('Splitter', function(accounts) {
     var splitter
+    var events;
+    let owner, acc1, acc2;
+
+    before("should prepare", function() {
+            owner = accounts[0];
+            acc1 = accounts[1];
+            acc2 = accounts[2];
+
+            Promise.promisifyAll(web3.eth, { suffix: "Promise" });
+        });
+
 
     it("should return zero'd covenant upon creation", function() {
 
-        //console.log(accounts[0]);
         return Splitter.deployed().then(function(instance) {
             splitter = instance;
-            //console.log(splitter.address);
+
             return splitter.createCovenant.sendTransaction({
-                from: accounts[0]
+                from: owner
             });
         }).then(function(result) {
-
-            //assert.isTrue(result, "should be true");
             return splitter.getCovenantDetail.call({
-                from: accounts[0]
+                from: owner
             });
         }).then(function(result) {
             assert.equal(result[0], 0, "should be zero for beneficiary count");
@@ -29,7 +65,7 @@ contract('Splitter', function(accounts) {
         return Splitter.deployed().then(function(instance) {
             splitter = instance;
             return splitter.createCovenant.sendTransaction({
-                from: accounts[0]
+                from: owner
             });
         }).then(function() {
             return false; //should not have got here
@@ -42,28 +78,28 @@ contract('Splitter', function(accounts) {
         return Splitter.deployed().then(function(instance) {
             splitter = instance;
         }).then(function(result) {
-            return splitter.addBeneficiary.sendTransaction(accounts[1], {
-                from: accounts[0]
+            return splitter.addBeneficiary.sendTransaction(acc1, {
+                from: owner
             });
         }).then(function() {
-            return splitter.getBeneficiaryDetail.call(accounts[0], {
-                from: accounts[1]
+            return splitter.getBeneficiaryDetail.call(owner, {
+                from: acc1
             });
         }).then(function(result) {
             assert.equal(result[0], 0, "should be zero for beneficiary available balance");
             assert.equal(result[1], 0, "should be zero for beneficiary total claimed");
-            return splitter.addBeneficiary.sendTransaction(accounts[2], {
-                from: accounts[0]
+            return splitter.addBeneficiary.sendTransaction(acc2, {
+                from: owner
             })
         }).then(function(result) {
-            return splitter.getBeneficiaryDetail.call(accounts[0], {
-                from: accounts[2]
+            return splitter.getBeneficiaryDetail.call(owner, {
+                from: acc2
             });
         }).then(function(result) {
             assert.equal(result[0], 0, "should be zero for beneficiary available balance");
             assert.equal(result[1], 0, "should be zero for beneficiary total claimed");
             return splitter.getCovenantDetail.call({
-                from: accounts[0]
+                from: owner
             });
         }).then(function(result) {
             assert.equal(result[0], 2, "should be two for beneficiary count");
@@ -78,25 +114,24 @@ contract('Splitter', function(accounts) {
         return Splitter.deployed().then(function(instance) {
             splitter = instance;
             return splitter.sendCoin.sendTransaction({
-                from: accounts[0],
+                from: owner,
                 value: val
             })
-        }).then(function() {
-            return splitter.getCovenantDetail.call({
-                from: accounts[0]
-            });
-        }).then(function(result) {
+        }).then(reult => splitter.getCovenantDetail.call({
+                from: owner
+            })
+        ).then(function(result) {
             assert.equal(result[0], 2, "should be 2 for benefciary count");
             assert.equal(result[1], val, "should be 1 ETH total sent");
             assert.equal(result[2], 0, "should still be zero total claimed");
-            return splitter.getBeneficiaryDetail.call(accounts[0], {
-                from: accounts[1]
+            return splitter.getBeneficiaryDetail.call(owner, {
+                from: acc1
             });
         }).then(function(result) {
             assert.equal(result[0], splitVal, "should be .5 ETH for beneficiary available balance");
             assert.equal(result[1], 0, "should be zero for beneficiary total claimed");
-            return splitter.getBeneficiaryDetail.call(accounts[0], {
-                from: accounts[2]
+            return splitter.getBeneficiaryDetail.call(owner, {
+                from: acc2
             });
         }).then(function(result) {
             assert.equal(result[0], splitVal, "should be .5 ETH for beneficiary available balance");
@@ -110,36 +145,34 @@ contract('Splitter', function(accounts) {
 
         return Splitter.deployed().then(function(instance) {
             splitter = instance;
-            return splitter.claimAvailable.sendTransaction(accounts[0], {
-                from: accounts[1]
+            return splitter.claimAvailable.sendTransaction(owner, {
+                from: acc1
             })
-        }).then(function() {
-            return splitter.getCovenantDetail.call({
-                from: accounts[0]
-            });
-        }).then(function(result) {
+        }).then(reult => splitter.getCovenantDetail.call({
+                from: owner
+            })
+        ).then(function(result) {
             assert.equal(result[0], 2, "should be 2 for benefciary count");
             assert.equal(result[1], val, "should be 1 ETH total sent");
             assert.equal(result[2], splitVal, "should .5 ETH total claimed");
-            return splitter.getBeneficiaryDetail.call(accounts[0], {
-                from: accounts[1]
+            return splitter.getBeneficiaryDetail.call(owner, {
+                from: acc1
             });
         }).then(function(result) {
             assert.equal(result[0], 0, "should be zero for beneficiary available balance");
             assert.equal(result[1], splitVal, "should be .5 ETH for beneficiary total claimed");
-            return splitter.claimAvailable.sendTransaction(accounts[0], {
-                from: accounts[2]
+            return splitter.claimAvailable.sendTransaction(owner, {
+                from: acc2
             })
-        }).then(function() {
-            return splitter.getCovenantDetail.call({
-                from: accounts[0]
-            });
-        }).then(function(result) {
+        }).then(result => splitter.getCovenantDetail.call({
+                from: owner
+            })
+        ).then(function(result) {
             assert.equal(result[0], 2, "should be 2 for benefciary count");
             assert.equal(result[1], val, "should be 1 ETH total sent");
             assert.equal(result[2], val, "should still be zero total claimed");
-            return splitter.getBeneficiaryDetail.call(accounts[0], {
-                from: accounts[2]
+            return splitter.getBeneficiaryDetail.call(owner, {
+                from: acc2
             });
         }).then(function(result) {
             assert.equal(result[0], 0, "should be zero for beneficiary available balance");
