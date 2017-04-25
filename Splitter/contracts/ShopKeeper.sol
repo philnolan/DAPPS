@@ -6,21 +6,11 @@ pragma solidity ^ 0.4 .0;
 
 contract ShopKeeper {
 
-    uint constant shopOwnerMerchantCode = 0;
+    //uint constant shopOwnerMerchantCode = 0;
     uint public merchantCount;
+    address shopOwner;
 
-    //address shopOwner;
-    modifier onlyMerchantOwner(uint merchantCode) {
-        if (msg.sender != merchants[merchantCode].Address) throw;
-        _;
-    }
-
-    modifier onlyShopOwner() {
-        if (msg.sender != merchants[shopOwnerMerchantCode].Address) throw;
-        _;
-    }
-
-   struct Product {
+    struct Product {
         string description;
         uint price;
         uint stock;
@@ -28,120 +18,134 @@ contract ShopKeeper {
     }
 
     enum MerchantStatus {AwaitingApproval, Rejected, Authorised}
+
+    modifier onlyAuthorisedMerchant() {
+        if (merchants[msg.sender].Status == MerchantStatus.Authorised) throw;
+        _;
+    }
+
+    modifier onlyShopOwner() {
+        if (msg.sender != shopOwner) throw;
+        _;
+    }
+
+
     //modifier atStatus(MerchantStatus status, MerchantStatus _hasToBeStatus) {
     //    if (status != hasToBeStatus) throw;
     //    _;
     //}
 
     struct Merchant {
-        address Address;
+        //address Address;
         string Name;
         MerchantStatus Status;
         uint ProductCount;
         uint Value;
         uint idx;
+        bool isActive;
         mapping(uint => Product) products;
         uint[] productsIndex;
     }
-    mapping(uint => Merchant) merchants;
-    uint[] merchantsIndex;
+    mapping(address => Merchant) merchants;
+    //uint[] merchantsIndex;
 
 
 
     uint public shopGrossValue;
 
-    event MerchantAdded(uint indexed merchantCode, string name, address addr);
-    event MerchantAuthorised(uint indexed merchantCode);
-    event MerchantRejected(uint indexed merchantCode);
+    event MerchantAdded(address merchantAddress, string name);
+    event MerchantAuthorised(address merchantAddress);
+    event MerchantRejected(address merchantAddress);
 
 
-    event ProductAdded(uint indexed merchantCode, uint indexed productCode, uint idx, string description, uint price, uint stock);
-    event ProductUpdated(uint indexed merchantCode, uint indexed productCode, uint idx, string description, uint price, uint stock);
-    event ProductDeleted(uint indexed merchantCode, uint indexed productCode, uint idx);
-    event ProductBought(uint indexed merchantCode, uint indexed productCode, address indexed buyer, uint quantity);
+    event ProductAdded(address indexed merchantAddress, uint indexed productCode, uint idx, string description, uint price, uint stock);
+    event ProductUpdated(address indexed merchantAddress, uint indexed productCode, uint idx, string description, uint price, uint stock);
+    event ProductDeleted(address indexed merchantAddress, uint indexed productCode, uint idx);
+    event ProductBought(address indexed merchantAddress, uint indexed productCode, address indexed buyer, uint quantity);
 
     function ShopKeeper() {
-        //shopOwner = msg.sender;
-
-        merchants[shopOwnerMerchantCode].Address = msg.sender;
-        merchants[shopOwnerMerchantCode].Name = "shopOwner";
-        merchants[shopOwnerMerchantCode].Status = MerchantStatus.Authorised;
+        shopOwner = msg.sender;
+        merchants[shopOwner].Name = "shopOwner";
+        merchants[shopOwner].Status = MerchantStatus.Authorised;
+        merchants[shopOwner].isActive == true;
         //merchants[shopOwnerMerchantCode].idx = merchantCount;
         merchantCount++;
     }
 
     //////Start:  Merchant functions//////
-    function getProductAtIndexForMerchant(uint idx, uint merchantCode)
+    function getProductAtIndexForMerchant(uint idx)
     public
     constant
     returns(uint productCode) {
-        return merchants[merchantCode].productsIndex[idx];
+        return merchants[msg.sender].productsIndex[idx];
     }
 
-    function addMerchant(uint merchantCode, string name )
+    function addMerchant(string name )
     public
     payable
     {
         //test to make sure address is not already in use
         //and the code isn't used by keeper
-        if (merchants[merchantCode].idx != 0) throw;
-        if (merchantCode == shopOwnerMerchantCode) throw;
+        if (merchants[msg.sender].isActive == true) throw;
+        if (msg.sender == shopOwner) throw;
 
-        //should shop owner add merchant codes?
-        merchants[merchantCode].Address = msg.sender;
-
-        merchants[merchantCode].Name = name;
-        merchants[merchantCode].Status = MerchantStatus.AwaitingApproval;
-        merchants[merchantCode].idx = merchantCount;
+        merchants[msg.sender].Name = name;
+        merchants[msg.sender].Status = MerchantStatus.AwaitingApproval;
+        //merchants[msg.sender].idx = merchantCount;
+        merchants[msg.sender].isActive = true;
 
         //pay to be included?
-        merchants[merchantCode].Value = msg.value;
+        merchants[msg.sender].Value = msg.value;
 
         merchantCount++;
 
-        MerchantAdded(merchantCode, name, msg.sender);
+        MerchantAdded(msg.sender, name);
     }
 
-    function authoriseMerchant(uint merchantCode)
+    function changeMerchantStatus(address merchantAddress, MerchantStatus status)
+    private
+    returns (bool success)
+    {
+        if (merchants[merchantAddress].isActive == false) return false;
+        if (merchantAddress == shopOwner) return false;
+
+        if ( merchants[merchantAddress].Status == status)  return false;
+
+        merchants[merchantAddress].Status = status;
+        return true;
+    }
+
+
+    function authoriseMerchant(address merchantAddress)
     public
     onlyShopOwner
     returns (bool success)
     {
-        if (merchants[merchantCode].idx != 0) return false;
-        if (merchantCode == shopOwnerMerchantCode) return false;
-        if ( merchants[merchantCode].Status == MerchantStatus.Authorised)  return false;
-
-        merchants[merchantCode].Status = MerchantStatus.Authorised;
-        MerchantAuthorised(merchantCode);
-        return true;
+        if (changeMerchantStatus(msg.sender, MerchantStatus.Authorised)) {
+            MerchantAuthorised(merchantAddress);
+            return true;
+        }
+        return false;
     }
 
-    function rejectMerchant(uint merchantCode)
+    function rejectMerchant(address merchantAddress)
     public
     onlyShopOwner
     returns (bool success) {
-        if (merchants[merchantCode].idx != 0) return false;
-        if (merchantCode == shopOwnerMerchantCode) return false;
-        if ( merchants[merchantCode].Status == MerchantStatus.Rejected)  return false;
 
-        merchants[merchantCode].Status = MerchantStatus.Rejected;
-        MerchantRejected(merchantCode);
-        return true;
+        if (changeMerchantStatus(msg.sender, MerchantStatus.Rejected)) {
+            MerchantRejected(merchantAddress);
+            return true;
+        }
+        return false;
     }
 
-    function getNumberOfMerhcants()
-    public
-    constant
-    returns (uint count)
-    {
-        return merchantsIndex.length;
-    }
 
-    function getProductCountForMerchant(uint merchantCode)
+    function getProductCountForMerchant()
     public
     constant
     returns(uint count) {
-        return merchants[merchantCode].productsIndex.length;
+        return merchants[msg.sender].productsIndex.length;
     }
 
     function makePayment()
@@ -158,163 +162,157 @@ contract ShopKeeper {
 
 
     function killMe() onlyShopOwner returns(bool) {
-        suicide(merchants[shopOwnerMerchantCode].Address);
+        suicide(shopOwner);
         return true;
     }
     //////End:  Merchant functions//////
 
     //////Start:  Product functions//////
 
-    function isValidProduct(uint productCode, uint merchantCode)
+    //
+    function isValidProduct(uint productCode, address merchantAddress)
     internal
     constant
     returns(bool isValid) {
-        if (merchants[merchantCode].productsIndex.length == 0) return false;
-        uint idx = merchants[merchantCode].products[productCode].idx;
-        return (merchants[merchantCode].productsIndex[idx] == productCode);
+        if (merchants[merchantAddress].productsIndex.length == 0) return false;
+        uint idx = merchants[merchantAddress].products[productCode].idx;
+        return (merchants[merchantAddress].productsIndex[idx] == productCode);
     }
 
 
-    function addProduct(uint productCode, string description, uint price, uint stock, uint merchantCode)
-    onlyMerchantOwner(merchantCode)
+    function addProduct(uint productCode, string description, uint price, uint stock)
+    onlyAuthorisedMerchant()
     returns(bool success) {
-        if (isValidProduct(productCode, merchantCode)) return false;
-        if (merchants[merchantCode].Status != MerchantStatus.Authorised) return false;
+        if (isValidProduct(productCode, msg.sender)) return false;
 
-        merchants[merchantCode].products[productCode].description = description;
-        merchants[merchantCode].products[productCode].price = price;
-        merchants[merchantCode].products[productCode].stock = stock;
-        merchants[merchantCode].products[productCode].idx = merchants[merchantCode].productsIndex.push(productCode) - 1;
+        merchants[msg.sender].products[productCode].description = description;
+        merchants[msg.sender].products[productCode].price = price;
+        merchants[msg.sender].products[productCode].stock = stock;
+        merchants[msg.sender].products[productCode].idx = merchants[msg.sender].productsIndex.push(productCode) - 1;
         shopGrossValue += price * stock;
-        merchants[merchantCode].ProductCount++;
-        ProductAdded(merchantCode,
+        merchants[msg.sender].ProductCount++;
+        ProductAdded(msg.sender,
             productCode,
-            merchants[merchantCode].products[productCode].idx,
+            merchants[msg.sender].products[productCode].idx,
             description,
             price,
             stock);
         return true;
     }
 
-    function deleteProduct(uint productCode, uint merchantCode)
+    function deleteProduct(uint productCode)
     public
-    onlyMerchantOwner(merchantCode)
+    onlyAuthorisedMerchant()
     returns(bool success) {
-        if (!isValidProduct(productCode, merchantCode)) return false;
-        if (merchants[merchantCode].Status != MerchantStatus.Authorised) return false;
+        if (!isValidProduct(productCode,msg.sender)) return false;
 
-        uint idxProductToDelete = merchants[merchantCode].products[productCode].idx;
-        uint productCodeToShift = merchants[merchantCode].productsIndex[merchants[merchantCode].productsIndex.length - 1];
+        uint idxProductToDelete = merchants[msg.sender].products[productCode].idx;
+        uint productCodeToShift = merchants[msg.sender].productsIndex[merchants[msg.sender].productsIndex.length - 1];
 
-        shopGrossValue -= merchants[merchantCode].products[productCode].price * merchants[merchantCode].products[productCode].stock;
+        shopGrossValue -= merchants[msg.sender].products[productCode].price * merchants[msg.sender].products[productCode].stock;
 
-        merchants[merchantCode].productsIndex[idxProductToDelete] = productCodeToShift;
-        merchants[merchantCode].products[productCodeToShift].idx = idxProductToDelete;
+        merchants[msg.sender].productsIndex[idxProductToDelete] = productCodeToShift;
+        merchants[msg.sender].products[productCodeToShift].idx = idxProductToDelete;
 
-        merchants[merchantCode].productsIndex.length--;
-        ProductDeleted(merchantCode,
+        merchants[msg.sender].productsIndex.length--;
+        ProductDeleted(msg.sender,
             productCode,
             idxProductToDelete);
 
         return true;
     }
 
-    function getProduct(uint productCode, uint merchantCode)
+    function getProduct(uint productCode)
     public
     constant
     returns(string description, uint price, uint stock, uint idx) {
-        if (!isValidProduct(productCode, merchantCode)) throw;
+        if (!isValidProduct(productCode, msg.sender)) throw;
         return (
-            merchants[merchantCode].products[productCode].description,
-            merchants[merchantCode].products[productCode].price,
-            merchants[merchantCode].products[productCode].stock,
-            merchants[merchantCode].products[productCode].idx);
+            merchants[msg.sender].products[productCode].description,
+            merchants[msg.sender].products[productCode].price,
+            merchants[msg.sender].products[productCode].stock,
+            merchants[msg.sender].products[productCode].idx);
     }
 
     //internal update to sit below individual public calls
-    function updateProduct (uint productCode, string description, uint price, uint stock, uint merchantCode)
+    function updateProduct (uint productCode, string description, uint price, uint stock)
     private
     returns (bool success) {
 
-        if (!isValidProduct(productCode, merchantCode)) return false;
-        if (merchants[merchantCode].Status != MerchantStatus.Authorised) return false;
+        if (!isValidProduct(productCode, msg.sender)) return false;
 
-        merchants[merchantCode].products[productCode].description = description;
-        var beforeVal = merchants[merchantCode].products[productCode].price * merchants[merchantCode].products[productCode].stock;
-        merchants[merchantCode].products[productCode].price = price;
-        merchants[merchantCode].products[productCode].stock = stock;
-        var afterVal = merchants[merchantCode].products[productCode].price * merchants[merchantCode].products[productCode].stock;
+        merchants[msg.sender].products[productCode].description = description;
+        var beforeVal = merchants[msg.sender].products[productCode].price * merchants[msg.sender].products[productCode].stock;
+        merchants[msg.sender].products[productCode].price = price;
+        merchants[msg.sender].products[productCode].stock = stock;
+        var afterVal = merchants[msg.sender].products[productCode].price * merchants[msg.sender].products[productCode].stock;
         shopGrossValue += beforeVal - afterVal;
 
-        ProductUpdated(merchantCode,
+        ProductUpdated(msg.sender,
             productCode,
-            merchants[merchantCode].products[productCode].idx,
-            merchants[merchantCode].products[productCode].description,
-            merchants[merchantCode].products[productCode].price,
-            merchants[merchantCode].products[productCode].stock);
+            merchants[msg.sender].products[productCode].idx,
+            merchants[msg.sender].products[productCode].description,
+            merchants[msg.sender].products[productCode].price,
+            merchants[msg.sender].products[productCode].stock);
         return true;
     }
 
-    function updateProductDescription(uint productCode, string description, uint merchantCode)
+    function updateProductDescription(uint productCode, string description)
     public
-    onlyMerchantOwner(merchantCode)
+    onlyAuthorisedMerchant()
     returns(bool success) {
 
         return updateProduct(productCode,
                                 description,
-                                merchants[merchantCode].products[productCode].price,
-                                merchants[merchantCode].products[productCode].stock,
-                                merchantCode);
+                                merchants[msg.sender].products[productCode].price,
+                                merchants[msg.sender].products[productCode].stock);
 
     }
 
-    function updateProductPrice(uint productCode, uint price, uint merchantCode)
+    function updateProductPrice(uint productCode, uint price)
     public
-    onlyMerchantOwner(merchantCode)
+    onlyAuthorisedMerchant()
     returns(bool success) {
          return updateProduct(productCode,
-                                merchants[merchantCode].products[productCode].description,
+                                merchants[msg.sender].products[productCode].description,
                                 price,
-                                merchants[merchantCode].products[productCode].stock,
-                                merchantCode);
+                                merchants[msg.sender].products[productCode].stock);
     }
 
-    function updateProductStock(uint productCode, uint stock, uint merchantCode)
+    function updateProductStock(uint productCode, uint stock)
     public
-    onlyMerchantOwner(merchantCode)
+    onlyAuthorisedMerchant()
     returns(bool success) {
         return updateProduct(productCode,
-                                merchants[merchantCode].products[productCode].description,
-                                merchants[merchantCode].products[productCode].price,
-                                stock,
-                                merchantCode);
+                                merchants[msg.sender].products[productCode].description,
+                                merchants[msg.sender].products[productCode].price,
+                                stock);
     }
 
 
 
-    function buyProduct(uint productCode, uint quantity, uint merchantCode)
+    function buyProduct(uint productCode, uint quantity, address merchantAddress)
     public
     payable
     returns(bool success) {
 
-        if (!isValidProduct(productCode, merchantCode)) throw;
+        if (!isValidProduct(productCode, merchantAddress)) throw;
 
         //enough stock?
-        if (merchants[merchantCode].products[productCode].stock < quantity) throw;
+        if (merchants[merchantAddress].products[productCode].stock < quantity) throw;
 
         //have they sent the correct price?
-        var costOfSale = merchants[merchantCode].products[productCode].price * quantity;
+        var costOfSale = merchants[merchantAddress].products[productCode].price * quantity;
         if (msg.value < costOfSale) throw;
 
         //buy event
 
         if (!updateProduct(productCode,
-                                merchants[merchantCode].products[productCode].description,
-                                merchants[merchantCode].products[productCode].price,
-                                merchants[merchantCode].products[productCode].stock -= quantity,
-                                merchantCode)) throw;
+                                merchants[merchantAddress].products[productCode].description,
+                                merchants[merchantAddress].products[productCode].price,
+                                merchants[merchantAddress].products[productCode].stock -= quantity)) throw;
 
-        ProductBought(merchantCode, productCode, msg.sender, quantity);
+        ProductBought(merchantAddress, productCode, msg.sender, quantity);
 
 
         return true;

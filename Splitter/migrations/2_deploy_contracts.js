@@ -1,6 +1,7 @@
 var Splitter = artifacts.require("./Splitter.sol");
 var Splitter0 = artifacts.require("./Splitter0.sol");
 var Bazar = artifacts.require("./Bazar.sol");
+var ShopKeeper = artifacts.require("./ShopKeeper.sol")
 //const Web3 = require("web3");
 //const Promise = require("bluebird");
 
@@ -22,5 +23,6 @@ module.exports = function(deployer) {
     deployer.deploy(Splitter);
     deployer.deploy(Splitter0);
     deployer.deploy(Bazar);
+    deployer.deploy(ShopKeeper);
 
 };
