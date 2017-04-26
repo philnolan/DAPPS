@@ -1,0 +1,868 @@
+{
+  "contract_name": "Splitter",
+  "abi": [
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "covenantOwner",
+          "type": "address"
+        }
+      ],
+      "name": "claimAvailable",
+      "outputs": [
+        {
+          "name": "successful",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getCovenantDetail",
+      "outputs": [
+        {
+          "name": "countBeneficiaries",
+          "type": "uint256"
+        },
+        {
+          "name": "totalSent",
+          "type": "uint256"
+        },
+        {
+          "name": "totalClaimed",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "covenantOwner",
+          "type": "address"
+        }
+      ],
+      "name": "getBeneficiaryDetail",
+      "outputs": [
+        {
+          "name": "available",
+          "type": "uint256"
+        },
+        {
+          "name": "totalClaimed",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "beneficiaryAddr",
+          "type": "address"
+        }
+      ],
+      "name": "addBeneficiary",
+      "outputs": [
+        {
+          "name": "successful",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "closeCovenant",
+      "outputs": [
+        {
+          "name": "successful",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "sendCoin",
+      "outputs": [
+        {
+          "name": "successful",
+          "type": "bool"
+        }
+      ],
+      "payable": true,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "createCovenant",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "payable": false,
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "addr",
+          "type": "address"
+        }
+      ],
+      "name": "CovenantCreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "beneficiary",
+          "type": "address"
+        }
+      ],
+      "name": "BeneficiaryAdded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "value",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "split",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "remainder",
+          "type": "uint256"
+        }
+      ],
+      "name": "CoinSentAndSplit",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "id",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "id2",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "CoinClaimed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "id",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "CovenantClosed",
+      "type": "event"
+    }
+  ],
+  "unlinked_binary": "0x606060405234610000575b5b5b61089b8061001b6000396000f300606060405236156100675763ffffffff60e060020a6000350416630b5d79af811461006c5780634fb6bfa514610099578063570a2fe5146100c45780635926651d146100f6578063a00c836f14610123578063c621fe9714610144578063d512fafb14610160575b610000565b3461000057610085600160a060020a036004351661016f565b604080519115158252519081900360200190f35b34610000576100a66102b0565b60408051938452602084019290925282820152519081900360600190f35b34610000576100dd600160a060020a0360043516610312565b6040805192835260208301919091528051918290030190f35b3461000057610085600160a060020a0360043516610380565b604080519115158252519081900360200190f35b34610000576100856104dd565b604080519115158252519081900360200190f35b6100856105ed565b604080519115158252519081900360200190f35b346100005761016d6107ae565b005b600160a060020a0380821660009081526020818152604080832033909416835292905290812060020154819060ff1615156101a957610000565b50600160a060020a0380831660009081526020818152604080832033909416835292905220548015156101db57610000565b8030600160a060020a03163110156101f257610000565b600160a060020a03808416600081815260208181526040808320339095168084528583528184208481556001018054880190559383529082905260049093018054850190559151909183156108fc02918491818181858888f19350505050151561025b57610000565b60408051600160a060020a0333811682528516602082015280820183905290517f38dda2e3f3260fffa8b4fbae3bd87725221d40502bdf2e14cc2eb20d3a8765209181900360600190a1600191505b50919050565b600160a060020a0333166000908152602081905260408120600501548190819060ff1615156102de57610000565b505050600160a060020a0333166000908152602081905260409020600281015460038201546004909201549091905b909192565b600160a060020a0380821660009081526020818152604080832033909416835292905290812060020154819060ff16151561034c57610000565b5050600160a060020a038181166000908152602081815260408083203390941683529290522080546001909101545b915091565b600160a060020a033316600090815260208190526040812060050154819060ff1615156103ac57610000565b600160a060020a033316600090815260208190526040902060029081015414156103d557610000565b600160a060020a033381166000908152602081815260408083209387168352929052206002015460ff161561040957610000565b5033600160a060020a0390811660008181526020818152604080832060028082018054600180820190925584516060810186528781528087018881528187018481529a8d16808a52868952878a209251835590518285015599519301805460ff191693151593909317909255818652909101835292819020805473ffffffffffffffffffffffffffffffffffffffff191686179055805193845290830193909352825190927fbb39c36a7502b7256e1a687254146a9a2ea7b146c77cb9e40eb0e2b8793781e1928290030190a15b50919050565b600160a060020a03331660009081526020819052604081206005015481908190819060ff16151561050d57610000565b505050600160a060020a03338116600090815260208190526040902060038101546004909101549091818303903016318190101561054a57610000565b600160a060020a0333166000818152602081905260408082206003810183905560048101839055600501805460ff191690555183156108fc0291849190818181858888f19350505050151561059e57610000565b60408051600160a060020a03331681526020810183905281517ff993c2b17b45b2c8b0ed2e842d6ef59afaeb0f86ce4707f3ee7cfecbf31e2955929181900390910190a1600193505b50505090565b600160a060020a0333166000908152602081905260408120600501548190819081908190819081908190819060ff16151561062757610000565b600134101561063557610000565b600160a060020a033316600090815260208190526040902060020154151561065c57610000565b600160a060020a03331660009081526020819052604090206002015434985096508688811561000057600160a060020a0333166000908152602081905260408120600201549290910497508888029650868a03955090935091505b828210156107055750600160a060020a03338116600090815260208181526040808320858452600181018352818420549094168084529390915290208054870190555b6001909101906106b7565b600160a060020a033316600090815260208190526040812060030180548701905584111561075d57604051600160a060020a0333169085156108fc029086906000818181858888f19350505050151561075d57610000565b5b604080518981526020810188905280820186905290517f21c577cd47ad7c614f46f7c12ab8bc158cbd708e38eec79db9ebb4b9f4b86b1c9181900360600190a1600198505b505050505050505090565b600160a060020a03331660009081526020819052604090206005015460ff16156107d757610000565b604080516080810182526000808252602080830182815283850183815260016060860190815233600160a060020a0316808652858552948790209551600287015591516003860155516004850155516005909301805460ff191693151593909317909255825190815291517f405b0d3eea128451412d081c4da5fbc46ac5ece8ea4e6eb710f72b4d18a5301d9281900390910190a15b5600a165627a7a723058208de92039320347bf7611a0326e8e071e9003bc591be817f7b91b389f6530ef2a0029",
+  "networks": {
+    "1491902871873": {
+      "events": {
+        "0x19f4d08442a3f0e59d6f5ed694fded7ab1ddd74be5cc60b2c3dd8fa891687f8f": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "split",
+              "type": "uint256"
+            }
+          ],
+          "name": "Transfer",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x41af1021f68cba93570951fefa5bbd2430a6fa8b",
+      "updated_at": 1491923823825
+    },
+    "1491923987459": {
+      "events": {
+        "0x19f4d08442a3f0e59d6f5ed694fded7ab1ddd74be5cc60b2c3dd8fa891687f8f": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "split",
+              "type": "uint256"
+            }
+          ],
+          "name": "Transfer",
+          "type": "event"
+        },
+        "0xe8ac9b4420c06e4fac7acd819a72f72887d646b5ce66139486d0612a59742c5f": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "split",
+              "type": "uint256"
+            }
+          ],
+          "name": "SplitCoinTrans",
+          "type": "event"
+        },
+        "0xd8138f8a3f377c5259ca548e70e4c2de94f129f5a11036a15b69513cba2b426a": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "Claimed",
+          "type": "event"
+        },
+        "0xf7a40077ff7a04c7e61f6f26fb13774259ddf1b6bce9ecf26a8276cdd3992683": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "id2",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "Claimed",
+          "type": "event"
+        },
+        "0xe35fa6870eeedba0df9480a717f514d523b132dc90a8075df0b4f4b91bf27b4a": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "id2",
+              "type": "address"
+            }
+          ],
+          "name": "Instance",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x6de14b768fed76f31b810de4c93de88ef3193bc8",
+      "updated_at": 1491943054013
+    },
+    "1491943139080": {
+      "events": {
+        "0xe8ac9b4420c06e4fac7acd819a72f72887d646b5ce66139486d0612a59742c5f": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "split",
+              "type": "uint256"
+            }
+          ],
+          "name": "SplitCoinTrans",
+          "type": "event"
+        },
+        "0xf7a40077ff7a04c7e61f6f26fb13774259ddf1b6bce9ecf26a8276cdd3992683": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "id2",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "Claimed",
+          "type": "event"
+        },
+        "0xe35fa6870eeedba0df9480a717f514d523b132dc90a8075df0b4f4b91bf27b4a": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "id2",
+              "type": "address"
+            }
+          ],
+          "name": "Instance",
+          "type": "event"
+        },
+        "0xf51f0dbf673d40f02499208c98f0012ebe0135bcaa37a41805570417c506a4b7": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "split",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "remainder",
+              "type": "uint256"
+            }
+          ],
+          "name": "SplitCoins",
+          "type": "event"
+        },
+        "0x1971e654f8704895ecbd404a0c2e6a97883b38b5f3d29e24e54e10f48a9103ca": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "addr",
+              "type": "address"
+            }
+          ],
+          "name": "ConventCreated",
+          "type": "event"
+        },
+        "0x21c577cd47ad7c614f46f7c12ab8bc158cbd708e38eec79db9ebb4b9f4b86b1c": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "split",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "remainder",
+              "type": "uint256"
+            }
+          ],
+          "name": "CoinSentAndSplit",
+          "type": "event"
+        },
+        "0x38dda2e3f3260fffa8b4fbae3bd87725221d40502bdf2e14cc2eb20d3a876520": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "id2",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "CoinClaimed",
+          "type": "event"
+        },
+        "0xbb39c36a7502b7256e1a687254146a9a2ea7b146c77cb9e40eb0e2b8793781e1": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "beneficiary",
+              "type": "address"
+            }
+          ],
+          "name": "BeneficiaryAdded",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0xa31747620c311456813d28fc63042e1ee2dad1f4",
+      "updated_at": 1492030989201
+    },
+    "1492031092755": {
+      "events": {
+        "0x1971e654f8704895ecbd404a0c2e6a97883b38b5f3d29e24e54e10f48a9103ca": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "addr",
+              "type": "address"
+            }
+          ],
+          "name": "ConventCreated",
+          "type": "event"
+        },
+        "0xbb39c36a7502b7256e1a687254146a9a2ea7b146c77cb9e40eb0e2b8793781e1": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "beneficiary",
+              "type": "address"
+            }
+          ],
+          "name": "BeneficiaryAdded",
+          "type": "event"
+        },
+        "0x21c577cd47ad7c614f46f7c12ab8bc158cbd708e38eec79db9ebb4b9f4b86b1c": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "split",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "remainder",
+              "type": "uint256"
+            }
+          ],
+          "name": "CoinSentAndSplit",
+          "type": "event"
+        },
+        "0x38dda2e3f3260fffa8b4fbae3bd87725221d40502bdf2e14cc2eb20d3a876520": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "id2",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "CoinClaimed",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x73dc8ae80dc5fe184ee3502be476abc1ddd38a0b",
+      "updated_at": 1492031097647
+    },
+    "1492155718830": {
+      "events": {
+        "0x405b0d3eea128451412d081c4da5fbc46ac5ece8ea4e6eb710f72b4d18a5301d": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "addr",
+              "type": "address"
+            }
+          ],
+          "name": "CovenantCreated",
+          "type": "event"
+        },
+        "0xbb39c36a7502b7256e1a687254146a9a2ea7b146c77cb9e40eb0e2b8793781e1": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "beneficiary",
+              "type": "address"
+            }
+          ],
+          "name": "BeneficiaryAdded",
+          "type": "event"
+        },
+        "0x21c577cd47ad7c614f46f7c12ab8bc158cbd708e38eec79db9ebb4b9f4b86b1c": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "split",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "remainder",
+              "type": "uint256"
+            }
+          ],
+          "name": "CoinSentAndSplit",
+          "type": "event"
+        },
+        "0x38dda2e3f3260fffa8b4fbae3bd87725221d40502bdf2e14cc2eb20d3a876520": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "id2",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "CoinClaimed",
+          "type": "event"
+        },
+        "0xf993c2b17b45b2c8b0ed2e842d6ef59afaeb0f86ce4707f3ee7cfecbf31e2955": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "CovenantClosed",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0xf767a64344b37cbb2dc83622c0a71c9b20a2c367",
+      "updated_at": 1492155723919
+    },
+    "1492156938173": {
+      "events": {
+        "0x405b0d3eea128451412d081c4da5fbc46ac5ece8ea4e6eb710f72b4d18a5301d": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "addr",
+              "type": "address"
+            }
+          ],
+          "name": "CovenantCreated",
+          "type": "event"
+        },
+        "0xbb39c36a7502b7256e1a687254146a9a2ea7b146c77cb9e40eb0e2b8793781e1": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "beneficiary",
+              "type": "address"
+            }
+          ],
+          "name": "BeneficiaryAdded",
+          "type": "event"
+        },
+        "0x21c577cd47ad7c614f46f7c12ab8bc158cbd708e38eec79db9ebb4b9f4b86b1c": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "split",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "remainder",
+              "type": "uint256"
+            }
+          ],
+          "name": "CoinSentAndSplit",
+          "type": "event"
+        },
+        "0x38dda2e3f3260fffa8b4fbae3bd87725221d40502bdf2e14cc2eb20d3a876520": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "id2",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "CoinClaimed",
+          "type": "event"
+        },
+        "0xf993c2b17b45b2c8b0ed2e842d6ef59afaeb0f86ce4707f3ee7cfecbf31e2955": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "CovenantClosed",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x6f8db5da086436bfc8422a6e116852dc64e466ee",
+      "updated_at": 1492543615653
+    },
+    "1492678233445": {
+      "events": {
+        "0x405b0d3eea128451412d081c4da5fbc46ac5ece8ea4e6eb710f72b4d18a5301d": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "addr",
+              "type": "address"
+            }
+          ],
+          "name": "CovenantCreated",
+          "type": "event"
+        },
+        "0xbb39c36a7502b7256e1a687254146a9a2ea7b146c77cb9e40eb0e2b8793781e1": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "beneficiary",
+              "type": "address"
+            }
+          ],
+          "name": "BeneficiaryAdded",
+          "type": "event"
+        },
+        "0x21c577cd47ad7c614f46f7c12ab8bc158cbd708e38eec79db9ebb4b9f4b86b1c": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "split",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "remainder",
+              "type": "uint256"
+            }
+          ],
+          "name": "CoinSentAndSplit",
+          "type": "event"
+        },
+        "0x38dda2e3f3260fffa8b4fbae3bd87725221d40502bdf2e14cc2eb20d3a876520": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "id2",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "CoinClaimed",
+          "type": "event"
+        },
+        "0xf993c2b17b45b2c8b0ed2e842d6ef59afaeb0f86ce4707f3ee7cfecbf31e2955": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "id",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "CovenantClosed",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x5051248e82e9f7354a9864b4c862aacad94d2b3e",
+      "updated_at": 1492951700892
+    }
+  },
+  "schema_version": "0.0.5",
+  "updated_at": 1492951700892
+}
