@@ -1,2 +1,0 @@
-# DAPPS
-Ethereum DAPPS repo
