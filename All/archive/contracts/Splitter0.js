@@ -1,12 +1,12 @@
 pragma solidity ^ 0.4 .4;
 
-contract Splitter0  {
+contract Splitter0 {
 
-address owner;
-  modifier onlyOwner {
-     if (msg.sender != owner) throw;
-    _;
-  }
+    address owner;
+    modifier onlyOwner {
+        if (msg.sender != owner) throw;
+        _;
+    }
 
 
     struct Beneficiary {

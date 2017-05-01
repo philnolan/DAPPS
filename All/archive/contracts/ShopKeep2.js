@@ -1,15 +1,6 @@
-pragma solidity ^ 0.4.0;
+pragma solidity ^ 0.4 .0;
 
-
-//shopKeeper is master merchant
-//products
-
-contract ShopKeeper {
-
-    //uint constant shopOwnerMerchantCode = 0;
-    uint public merchantCount;
-    address shopOwner;
-
+contract MerchantHolder {
     struct Product {
         string description;
         uint price;
@@ -17,23 +8,15 @@ contract ShopKeeper {
         uint idx;
     }
 
-    enum MerchantStatus {Inexistent, AwaitingApproval, Rejected, Authorised}
-
-    modifier onlyAuthorisedMerchant() {
-        if (merchants[msg.sender].Status == MerchantStatus.Authorised) throw;
+    enum MerchantStatus {
+        AwaitingApproval,
+        Rejected,
+        Authorised
+    }
+    modifier onlyAuthorisedMerchant(Merchant _merchant) {
+        if (_merchant.Status == MerchantStatus.Authorised) throw;
         _;
     }
-
-    modifier onlyShopOwner() {
-        if (msg.sender != shopOwner) throw;
-        _;
-    }
-
-
-    //modifier atStatus(MerchantStatus status, MerchantStatus _hasToBeStatus) {
-    //    if (status != hasToBeStatus) throw;
-    //    _;
-    //}
 
     struct Merchant {
         //address Address;
@@ -46,6 +29,53 @@ contract ShopKeeper {
         mapping(uint => Product) products;
         uint[] productsIndex;
     }
+
+    //function isValidProduct(uint productCode, Merchant merchant)
+    //returns(bool isValid) {
+    //    if (merchant.productsIndex.length == 0) return false;
+    //    uint idx = merchant.products[productCode].idx;
+    //    return (merchant.productsIndex[idx] == productCode);
+    //}
+
+    function addProduct(Merchant merchant, uint productCode, string description, uint price, uint stock)
+    onlyAuthorisedMerchant(merchant)
+    returns(bool success) {
+        //if (isValidProduct(productCode, merchant)) return false;
+
+        merchant.products[productCode].description = description;
+        merchant.products[productCode].price = price;
+        merchant.products[productCode].stock = stock;
+        merchant.products[productCode].idx = merchant.productsIndex.push(productCode) - 1;
+        //shopGrossValue += price * stock;
+        merchant.ProductCount++;
+
+        return true;
+    }
+
+}
+
+//shopKeeper is master merchant
+//products
+
+contract ShopKeeper is MerchantHolder {
+
+    //uint constant shopOwnerMerchantCode = 0;
+    uint public merchantCount;
+    address shopOwner;
+
+
+    modifier onlyShopOwner() {
+        if (msg.sender != shopOwner) throw;
+        _;
+    }
+
+
+    //modifier atStatus(MerchantStatus status, MerchantStatus _hasToBeStatus) {
+    //    if (status != hasToBeStatus) throw;
+    //    _;
+    //}
+
+
     mapping(address => Merchant) merchants;
     //uint[] merchantsIndex;
 
@@ -80,10 +110,9 @@ contract ShopKeeper {
         return merchants[msg.sender].productsIndex[idx];
     }
 
-    function addMerchant(string name )
+    function addMerchant(string name)
     public
-    payable
-    {
+    payable {
         //test to make sure address is not already in use
         //and the code isn't used by keeper
         if (merchants[msg.sender].isActive == true) throw;
@@ -104,12 +133,11 @@ contract ShopKeeper {
 
     function changeMerchantStatus(address merchantAddress, MerchantStatus status)
     private
-    returns (bool success)
-    {
+    returns(bool success) {
         if (merchants[merchantAddress].isActive == false) return false;
         if (merchantAddress == shopOwner) return false;
 
-        if ( merchants[merchantAddress].Status == status)  return false;
+        if (merchants[merchantAddress].Status == status) return false;
 
         merchants[merchantAddress].Status = status;
         return true;
@@ -119,8 +147,7 @@ contract ShopKeeper {
     function authoriseMerchant(address merchantAddress)
     public
     onlyShopOwner
-    returns (bool success)
-    {
+    returns(bool success) {
         if (changeMerchantStatus(msg.sender, MerchantStatus.Authorised)) {
             MerchantAuthorised(merchantAddress);
             return true;
@@ -131,7 +158,7 @@ contract ShopKeeper {
     function rejectMerchant(address merchantAddress)
     public
     onlyShopOwner
-    returns (bool success) {
+    returns(bool success) {
 
         if (changeMerchantStatus(msg.sender, MerchantStatus.Rejected)) {
             MerchantRejected(merchantAddress);
@@ -150,8 +177,7 @@ contract ShopKeeper {
 
     function makePayment()
     onlyShopOwner
-    payable
-    {}
+    payable {}
 
     //TODO:  Merchant withdrawls - should shop keeper take a cut
     function makeWithdrawl(uint amount) onlyShopOwner {
@@ -170,41 +196,31 @@ contract ShopKeeper {
     //////Start:  Product functions//////
 
     //
-    function isValidProduct(uint productCode, address merchantAddress)
-    internal
-    constant
-    returns(bool isValid) {
-        if (merchants[merchantAddress].productsIndex.length == 0) return false;
-        uint idx = merchants[merchantAddress].products[productCode].idx;
-        return (merchants[merchantAddress].productsIndex[idx] == productCode);
-    }
 
 
-    function addProduct(uint productCode, string description, uint price, uint stock)
-    onlyAuthorisedMerchant()
+
+    function addMerchantProduct(uint productCode, string description, uint price, uint stock)
+    //onlyAuthorisedMerchant(merchants[msg.sender])
     returns(bool success) {
-        if (isValidProduct(productCode, msg.sender)) return false;
-
-        merchants[msg.sender].products[productCode].description = description;
-        merchants[msg.sender].products[productCode].price = price;
-        merchants[msg.sender].products[productCode].stock = stock;
-        merchants[msg.sender].products[productCode].idx = merchants[msg.sender].productsIndex.push(productCode) - 1;
-        shopGrossValue += price * stock;
-        merchants[msg.sender].ProductCount++;
-        ProductAdded(msg.sender,
-            productCode,
-            merchants[msg.sender].products[productCode].idx,
-            description,
-            price,
-            stock);
-        return true;
+        //if (isValidProduct(productCode, msg.sender)) return false;
+        if (addProduct(merchants[msg.sender], productCode, description, price, stock)) {
+            shopGrossValue += price * stock;
+            ProductAdded(msg.sender,
+                productCode,
+                merchants[msg.sender].products[productCode].idx,
+                description,
+                price,
+                stock);
+            return true;
+        }
+        return false;
     }
 
     function deleteProduct(uint productCode)
     public
-    onlyAuthorisedMerchant()
+    onlyAuthorisedMerchant(merchants[msg.sender])
     returns(bool success) {
-        if (!isValidProduct(productCode,msg.sender)) return false;
+        //if (!isValidProduct(productCode, msg.sender)) return false;
 
         uint idxProductToDelete = merchants[msg.sender].products[productCode].idx;
         uint productCodeToShift = merchants[msg.sender].productsIndex[merchants[msg.sender].productsIndex.length - 1];
@@ -226,7 +242,7 @@ contract ShopKeeper {
     public
     constant
     returns(string description, uint price, uint stock, uint idx) {
-        if (!isValidProduct(productCode, msg.sender)) throw;
+        //if (!isValidProduct(productCode, msg.sender)) throw;
         return (
             merchants[msg.sender].products[productCode].description,
             merchants[msg.sender].products[productCode].price,
@@ -235,11 +251,11 @@ contract ShopKeeper {
     }
 
     //internal update to sit below individual public calls
-    function updateProduct (uint productCode, string description, uint price, uint stock)
+    function updateProduct(uint productCode, string description, uint price, uint stock)
     private
-    returns (bool success) {
+    returns(bool success) {
 
-        if (!isValidProduct(productCode, msg.sender)) return false;
+        //if (!isValidProduct(productCode, msg.sender)) return false;
 
         merchants[msg.sender].products[productCode].description = description;
         var beforeVal = merchants[msg.sender].products[productCode].price * merchants[msg.sender].products[productCode].stock;
@@ -259,34 +275,34 @@ contract ShopKeeper {
 
     function updateProductDescription(uint productCode, string description)
     public
-    onlyAuthorisedMerchant()
+    onlyAuthorisedMerchant(merchants[msg.sender])
     returns(bool success) {
 
         return updateProduct(productCode,
-                                description,
-                                merchants[msg.sender].products[productCode].price,
-                                merchants[msg.sender].products[productCode].stock);
+            description,
+            merchants[msg.sender].products[productCode].price,
+            merchants[msg.sender].products[productCode].stock);
 
     }
 
     function updateProductPrice(uint productCode, uint price)
     public
-    onlyAuthorisedMerchant()
+    onlyAuthorisedMerchant(merchants[msg.sender])
     returns(bool success) {
-         return updateProduct(productCode,
-                                merchants[msg.sender].products[productCode].description,
-                                price,
-                                merchants[msg.sender].products[productCode].stock);
+        return updateProduct(productCode,
+            merchants[msg.sender].products[productCode].description,
+            price,
+            merchants[msg.sender].products[productCode].stock);
     }
 
     function updateProductStock(uint productCode, uint stock)
     public
-    onlyAuthorisedMerchant()
+    onlyAuthorisedMerchant(merchants[msg.sender])
     returns(bool success) {
         return updateProduct(productCode,
-                                merchants[msg.sender].products[productCode].description,
-                                merchants[msg.sender].products[productCode].price,
-                                stock);
+            merchants[msg.sender].products[productCode].description,
+            merchants[msg.sender].products[productCode].price,
+            stock);
     }
 
 
@@ -296,7 +312,7 @@ contract ShopKeeper {
     payable
     returns(bool success) {
 
-        if (!isValidProduct(productCode, merchantAddress)) throw;
+        //if (!isValidProduct(productCode, merchantAddress)) throw;
 
         //enough stock?
         if (merchants[merchantAddress].products[productCode].stock < quantity) throw;
@@ -308,9 +324,9 @@ contract ShopKeeper {
         //buy event
 
         if (!updateProduct(productCode,
-                                merchants[merchantAddress].products[productCode].description,
-                                merchants[merchantAddress].products[productCode].price,
-                                merchants[merchantAddress].products[productCode].stock -= quantity)) throw;
+                merchants[merchantAddress].products[productCode].description,
+                merchants[merchantAddress].products[productCode].price,
+                merchants[merchantAddress].products[productCode].stock -= quantity)) throw;
 
         ProductBought(merchantAddress, productCode, msg.sender, quantity);
 

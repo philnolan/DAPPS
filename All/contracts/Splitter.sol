@@ -21,11 +21,11 @@ contract Splitter {
 
     mapping(address => Covenant) covenants;
 
-    event CovenantCreated(address addr);
-    event BeneficiaryAdded(address owner, address beneficiary);
-    event CoinSentAndSplit(uint value, uint split, uint remainder);
-    event CoinClaimed(address id, address id2, uint value);
-    event CovenantClosed(address id, uint value);
+    event LogCovenantCreated(address addr);
+    event LogBeneficiaryAdded(address owner, address beneficiary);
+    event LogCoinSentAndSplit(uint value, uint split, uint remainder);
+    event LogCoinClaimed(address id, address id2, uint value);
+    event LogCovenantClosed(address id, uint value);
 
     function Splitter() {}
 
@@ -41,41 +41,40 @@ contract Splitter {
             isActive: true
         });
 
-        CovenantCreated(msg.sender);
+        LogCovenantCreated(msg.sender);
     }
 
     function getCovenantDetail() constant returns(uint countBeneficiaries,
         uint totalSent,
-        uint totalClaimed) {
+        uint totalClaimed,
+        bool isActive) {
 
-        //throw if not active
-        if (!covenants[msg.sender].isActive) throw;
 
         return (covenants[msg.sender].countBeneficiaries,
             covenants[msg.sender].totalSent,
-            covenants[msg.sender].totalClaimed);
+            covenants[msg.sender].totalClaimed,
+            covenants[msg.sender].isActive);
     }
 
 
     function addBeneficiary(address beneficiaryAddr) returns(bool successful) {
         //throw if not active
-        if (!covenants[msg.sender].isActive) throw;
+
+        Covenant covenant = covenants[msg.sender];
+        if (!covenant.isActive) throw;
 
         //have we exceeded max
-        if (maxBeneficiaries == covenants[msg.sender].countBeneficiaries) throw;
+        if (maxBeneficiaries == covenant.countBeneficiaries) throw;
 
         //test for beneficiary already been added
-        if (covenants[msg.sender].beneficiaries[beneficiaryAddr].isActive) throw;
 
-        var counter = covenants[msg.sender].countBeneficiaries++;
-        covenants[msg.sender].beneficiaries[beneficiaryAddr] = Beneficiary({
-            available: 0,
-            totalClaimed: 0,
-            isActive: true
-        });
-        covenants[msg.sender].beneficiariesMap[counter] = beneficiaryAddr;
+        Beneficiary beneficiary = covenant.beneficiaries[beneficiaryAddr];
+        if (beneficiary.isActive) throw;
+        uint counter = covenant.countBeneficiaries++;
+        beneficiary.isActive = true;
+        covenant.beneficiariesMap[counter] = beneficiaryAddr;
 
-        BeneficiaryAdded(msg.sender, beneficiaryAddr);
+        LogBeneficiaryAdded(msg.sender, beneficiaryAddr);
     }
 
 
@@ -123,7 +122,7 @@ contract Splitter {
         }
 
         //write event
-        CoinSentAndSplit(coin, perBenificiary, remainder);
+        LogCoinSentAndSplit(coin, perBenificiary, remainder);
 
         return true;
     }
@@ -148,31 +147,31 @@ contract Splitter {
         if (!msg.sender.send(available)) throw;
 
         //write log
-        CoinClaimed(msg.sender, covenantOwner, available);
+        LogCoinClaimed(msg.sender, covenantOwner, available);
 
         return true;
     }
 
     function closeCovenant() returns(bool successful) {
 
-        //thow if not active
-        if (!covenants[msg.sender].isActive) throw;
+        Covenant covenant = covenants[msg.sender];
+        if (!covenant.isActive) throw;
 
-        var sent = covenants[msg.sender].totalSent;
-        var claimed = covenants[msg.sender].totalClaimed;
+        var sent = covenant.totalSent;
+        var claimed = covenant.totalClaimed;
         var total = sent - claimed;
 
         if (this.balance < total) throw;
 
-        covenants[msg.sender].totalSent = 0;
-        covenants[msg.sender].totalClaimed = 0;
-        covenants[msg.sender].isActive = false;
+        covenant.totalSent = 0;
+        covenant.totalClaimed = 0;
+        covenant.isActive = false;
 
         //fingers crossed
         if (!msg.sender.send(total)) throw;
 
         //write log
-        CovenantClosed(msg.sender, total);
+        LogCovenantClosed(msg.sender, total);
 
         return true;
     }
