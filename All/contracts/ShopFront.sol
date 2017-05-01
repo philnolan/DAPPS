@@ -1,6 +1,7 @@
 pragma solidity ^ 0.4 .0;
 
-contract ShopFront {
+import "./Owned.sol";
+contract ShopFront is Owned {
 
     //wk5. A SHOPFRONT
     //The project will start as a database whereby:
@@ -13,7 +14,7 @@ contract ShopFront {
     //add merchants akin to what Amazon has become.
     //add the ability to pay with a third-party token.
 
-    address public shopOwner;
+    //address shopOwner;
 
     struct Product {
         uint price;
@@ -23,16 +24,16 @@ contract ShopFront {
     mapping(uint => Product) products;
     uint[] productsIndex;
 
-    modifier onlyShopOwner() {
-        if (msg.sender != shopOwner) throw;
-        _;
-    }
+    //modifier onlyShopOwner() {
+    //    if (msg.sender != shopOwner) throw;
+    //    _;
+    //}
 
     event LogProductAdded(uint id, uint price, uint stock);
     event LogProductBought(address buyer, uint id, uint price, uint quantity);
 
     function ShopOwner() {
-        shopOwner = msg.sender;
+        //shopOwner = msg.sender;
     }
 
     //checks whether the passed product id exists within the products array
@@ -47,8 +48,9 @@ contract ShopFront {
 
     //adds a product if not already exists
     function addProduct(uint _id, uint _price, uint _stock)
-    onlyShopOwner
+    onlyOwner
     returns(bool success) {
+
         if (isValidProduct(_id)) return false;
 
         products[_id] = Product({
@@ -59,6 +61,7 @@ contract ShopFront {
         LogProductAdded(_id,
             _price,
             _stock);
+
         return true;
     }
 
@@ -82,11 +85,12 @@ contract ShopFront {
     }
 
     function makePayment()
-    onlyShopOwner
+    onlyOwner
     payable {}
 
     function makeWithdrawl(uint _amount)
-    onlyShopOwner {
+    onlyOwner
+    {
         if (this.balance < _amount) throw;
 
         if (!msg.sender.send(_amount)) throw;

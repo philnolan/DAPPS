@@ -8,6 +8,7 @@ contract('MetaCoin', function(accounts) {
       assert.equal(balance.valueOf(), 10000, "10000 wasn't in the first account");
     });
   });
+
   it("should call a function that depends on a linked library", function() {
     var meta;
     var metaCoinBalance;
@@ -25,6 +26,7 @@ contract('MetaCoin', function(accounts) {
       assert.equal(metaCoinEthBalance, 2 * metaCoinBalance, "Library function returned unexpected function, linkage may be broken");
     });
   });
+
   it("should send coin correctly", function() {
     var meta;
 
