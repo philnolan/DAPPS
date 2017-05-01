@@ -97,25 +97,59 @@ contract('ShopFront', function(accounts) {
             })
             .then(function(result) {
                 assert.isTrue(result, "should be true");
-                //blockNumber = web3.eth.blockNumber + 1;
+                //var blockNumber = web3.eth.blockNumber + 1;
                 return instance.addProduct(1, 10, 1, {
                     from: accounts[0]
                 });
             })
             .then(function(tx) {
-              console.log(tx);
+              console.log(tx.tx);
               //return Promise.all([
               //	    		getEventsPromise(instance.LogProductAdded(
               //	    			{},
               //	    			{ fromBlock: blockNumber, toBlock: "latest" })),
-              //	    		web3.eth.getTransactionReceiptMined(tx)
+              //	    		web3.eth.getTransactionReceiptMined(tx.tx)
               //    		]);
 
-                //return web3.eth.getTransactionReceiptMined(tx);
+              //  return web3.eth.getTransactionReceiptMined(tx.tx);
 
-            })
-            //.then (function(receipt) {
-            //  console.log(receipt);
-            //});
+//            })
+  // /         .then (function(receipt) {
+      //        console.log(receipt);
+            });
     });
+
+    it("should allow purchase of a product", () => {
+        var instance;
+        return ShopFront.deployed()
+            .then(_instance => {
+                instance = _instance;
+                return instance.buyProduct.call(1, {
+                    from: accounts[1], value: 10
+                });
+            })
+            .then(function(result) {
+                assert.isTrue(result, "should be true");
+                //var blockNumber = web3.eth.blockNumber + 1;
+                return instance.buyProduct(1, {
+                    from: accounts[1], value: 10
+                });
+            })
+            .then(function(tx) {
+              console.log(tx.tx);
+              //return Promise.all([
+              //	    		getEventsPromise(instance.LogProductAdded(
+              //	    			{},
+              //	    			{ fromBlock: blockNumber, toBlock: "latest" })),
+              //	    		web3.eth.getTransactionReceiptMined(tx.tx)
+              //    		]);
+
+              //  return web3.eth.getTransactionReceiptMined(tx.tx);
+
+//            })
+  // /         .then (function(receipt) {
+      //        console.log(receipt);
+            });
+    });
+
 });

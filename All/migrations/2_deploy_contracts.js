@@ -1,6 +1,6 @@
 var Splitter = artifacts.require("./Splitter.sol");
 var ShopKeeper = artifacts.require("./ShopKeeper.sol")
-var ShopFront = artifacts.require("./ShopFront.sol")
+var ShopFront = artifacts.require("./ShopFront/ShopFront.sol")
 var ConvertLib = artifacts.require("./ConvertLib.sol")
 var MetaCoin = artifacts.require("./MetaCoin.sol")
 

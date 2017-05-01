@@ -1,8 +1,22 @@
 {
   "contract_name": "Products",
-  "abi": [],
-  "unlinked_binary": "0x6060604052346000575b60358060166000396000f30060606040525b60005600a165627a7a723058203c515a03e4f88103e205d78d989433292252974c1cc1b6b5db64fcdefc2b5a290029",
+  "abi": [
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getProductCount",
+      "outputs": [
+        {
+          "name": "count",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    }
+  ],
+  "unlinked_binary": "0x6060604052346000575b6071806100176000396000f300606060405263ffffffff60e060020a6000350416634a348da981146022575b6000565b34600057602c603e565b60408051918252519081900360200190f35b6001545b905600a165627a7a7230582065ff15f86163a899f205ccd0adff1e9af3da40febfb8e8f7e47928488d91b5820029",
   "networks": {},
   "schema_version": "0.0.5",
-  "updated_at": 1493644366472
+  "updated_at": 1493650027365
 }

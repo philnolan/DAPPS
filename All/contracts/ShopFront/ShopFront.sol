@@ -1,20 +1,7 @@
-pragma solidity ^ 0.4 .0;
+pragma solidity ^0.4.0;
 
-import "./Owned.sol";
-
-contract Products {
-
-struct Product {
-    uint price;
-    uint stock;
-    uint idx;
-}
-  mapping(uint => Product) products;
-  uint[] productsIndex;
-
-
-}
-
+import "../Owned.sol";
+import "./Products.sol";
 contract ShopFront is Owned, Products {
 
     //wk5. A SHOPFRONT
@@ -28,40 +15,21 @@ contract ShopFront is Owned, Products {
     //add merchants akin to what Amazon has become.
     //add the ability to pay with a third-party token.
 
-
-    //modifier onlyShopOwner() {
-    //    if (msg.sender != shopOwner) throw;
-    //    _;
-    //}
+    //Products.sol
 
     event LogProductAdded(uint id, uint price, uint stock);
-    event LogProductBought(address buyer, uint id, uint price, uint quantity);
+    event LogProductBought(address buyer, uint id, uint quantity);
 
     function ShopOwner() {
-        //shopOwner = msg.sender;
     }
 
-    //checks whether the passed product id exists within the products array
-    function isValidProduct(uint _id)
-    internal
-    constant
-    returns(bool isValid) {
-        if (productsIndex.length == 0) return false;
-        uint idx = products[_id].idx;
-        return (productsIndex[idx] == _id);
-    }
 
     //adds a product if not already exists
     function addProduct(uint _id, uint _price, uint _stock)
     onlyOwner
     returns(bool success) {
 
-        if (isValidProduct(_id)) return false;
-
-        products[_id] = Product({
-            price: _price,
-            stock: _stock,
-            idx: productsIndex.push(_id) - 1});
+        if(! add(_id, _price,_stock)) return false;
 
         LogProductAdded(_id,
             _price,
@@ -75,19 +43,12 @@ contract ShopFront is Owned, Products {
     payable
     returns(bool success) {
 
-        if (products[_id].stock < 1) throw;
-        uint price = products[_id].price;
-        if (msg.value < price) throw;
+        if (!okToBuy(_id, msg.value)) throw;
 
-        LogProductBought(msg.sender, _id,  price, 1);
+        LogProductBought(msg.sender, _id, 1);
         return true;
     }
 
-    function getProductCount()
-    constant
-    returns(uint count) {
-        return productsIndex.length;
-    }
 
     function makePayment()
     onlyOwner
