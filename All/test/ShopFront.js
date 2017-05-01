@@ -1,3 +1,7 @@
+
+//console.log(web3);
+//console.log(web3.blockNumber);
+const Promise = require("bluebird");
 const ShopFront = artifacts.require("./ShopFront.sol");
 
 web3.eth.getTransactionReceiptMined = function(txnHash, interval) {
@@ -23,14 +27,53 @@ web3.eth.getTransactionReceiptMined = function(txnHash, interval) {
     });
 };
 
+// Found here https://gist.github.com/xavierlepretre/afab5a6ca65e0c52eaf902b50b807401
+var getEventsPromise = function (myFilter, count) {
+  return new Promise(function (resolve, reject) {
+    count = count ? count : 1;
+    var results = [];
+    myFilter.watch(function (error, result) {
+      if (error) {
+        reject(error);
+      } else {
+        count--;
+        results.push(result);
+      }
+      if (count <= 0) {
+        resolve(results);
+        myFilter.stopWatching();
+      }
+    });
+  });
+};
+
+// Found here https://gist.github.com/xavierlepretre/d5583222fde52ddfbc58b7cfa0d2d0a9
+var expectedExceptionPromise = function (action, gasToUse) {
+  return new Promise(function (resolve, reject) {
+      try {
+        resolve(action());
+      } catch(e) {
+        reject(e);
+      }
+    })
+    .then(function (txn) {
+      return web3.eth.getTransactionReceiptMined(txn);
+    })
+    .then(function (receipt) {
+      // We are in Geth
+      assert.equal(receipt.gasUsed, gasToUse, "should have used all the gas");
+    })
+    .catch(function (e) {
+      if ((e + "").indexOf("invalid JUMP") > -1) {
+        // We are in TestRPC
+      } else {
+        throw e;
+      }
+    });
+};
+
 
 contract('ShopFront', function(accounts) {
-
-    //return ShopFront.deployed().then(function(instance) {
-    //    splitter = instance;
-
-    //should only allow shopOwner to add product
-
     it("should start with zero products", () => {
         var instance;
         return ShopFront.deployed()
@@ -43,7 +86,7 @@ contract('ShopFront', function(accounts) {
             });
     });
 
-    it("should allow add of a product", function() {
+    it("should allow add of a product", () => {
         var instance;
         return ShopFront.deployed()
             .then(_instance => {
@@ -54,16 +97,25 @@ contract('ShopFront', function(accounts) {
             })
             .then(function(result) {
                 assert.isTrue(result, "should be true");
+                //blockNumber = web3.eth.blockNumber + 1;
                 return instance.addProduct(1, 10, 1, {
                     from: accounts[0]
                 });
             })
             .then(function(tx) {
-                return web3.eth.getTransactionReceiptMined(tx);
+              console.log(tx);
+              //return Promise.all([
+              //	    		getEventsPromise(instance.LogProductAdded(
+              //	    			{},
+              //	    			{ fromBlock: blockNumber, toBlock: "latest" })),
+              //	    		web3.eth.getTransactionReceiptMined(tx)
+              //    		]);
+
+                //return web3.eth.getTransactionReceiptMined(tx);
 
             })
-            .then (function(receipt) {
-              console.log(receipt);
-            });
+            //.then (function(receipt) {
+            //  console.log(receipt);
+            //});
     });
 });

@@ -52,15 +52,15 @@ contract ShopKeeper {
 
     uint public shopGrossValue;
 
-    event MerchantAdded(address merchantAddress, string name);
-    event MerchantAuthorised(address merchantAddress);
-    event MerchantRejected(address merchantAddress);
+    event LogMerchantAdded(address merchantAddress, string name);
+    event LogMerchantAuthorised(address merchantAddress);
+    event LogMerchantRejected(address merchantAddress);
 
 
-    event ProductAdded(address indexed merchantAddress, uint indexed productCode, uint idx, string description, uint price, uint stock);
-    event ProductUpdated(address indexed merchantAddress, uint indexed productCode, uint idx, string description, uint price, uint stock);
-    event ProductDeleted(address indexed merchantAddress, uint indexed productCode, uint idx);
-    event ProductBought(address indexed merchantAddress, uint indexed productCode, address indexed buyer, uint quantity);
+    event LogProductAdded(address indexed merchantAddress, uint indexed productCode, uint idx, string description, uint price, uint stock);
+    event LogProductUpdated(address indexed merchantAddress, uint indexed productCode, uint idx, string description, uint price, uint stock);
+    event LogProductDeleted(address indexed merchantAddress, uint indexed productCode, uint idx);
+    event LogProductBought(address indexed merchantAddress, uint indexed productCode, address indexed buyer, uint quantity);
 
     function ShopKeeper() {
         shopOwner = msg.sender;
@@ -98,7 +98,7 @@ contract ShopKeeper {
 
         merchantCount++;
 
-        MerchantAdded(msg.sender, name);
+        LogMerchantAdded(msg.sender, name);
     }
 
     function changeMerchantStatus(address merchantAddress, MerchantStatus status)
@@ -121,7 +121,7 @@ contract ShopKeeper {
     returns (bool success)
     {
         if (changeMerchantStatus(msg.sender, MerchantStatus.Authorised)) {
-            MerchantAuthorised(merchantAddress);
+            LogMerchantAuthorised(merchantAddress);
             return true;
         }
         return false;
@@ -133,7 +133,7 @@ contract ShopKeeper {
     returns (bool success) {
 
         if (changeMerchantStatus(msg.sender, MerchantStatus.Rejected)) {
-            MerchantRejected(merchantAddress);
+            LogMerchantRejected(merchantAddress);
             return true;
         }
         return false;
@@ -153,7 +153,9 @@ contract ShopKeeper {
     {}
 
     //TODO:  Merchant withdrawls - should shop keeper take a cut
-    function makeWithdrawl(uint amount) onlyShopOwner {
+    function makeWithdrawl(uint amount)
+    onlyShopOwner
+    {
         if (this.balance < amount) throw;
 
         if (!msg.sender.send(amount)) throw;
@@ -190,7 +192,7 @@ contract ShopKeeper {
         merchants[msg.sender].products[productCode].idx = merchants[msg.sender].productsIndex.push(productCode) - 1;
         shopGrossValue += price * stock;
         merchants[msg.sender].ProductCount++;
-        ProductAdded(msg.sender,
+        LogProductAdded(msg.sender,
             productCode,
             merchants[msg.sender].products[productCode].idx,
             description,
@@ -214,7 +216,7 @@ contract ShopKeeper {
         merchants[msg.sender].products[productCodeToShift].idx = idxProductToDelete;
 
         merchants[msg.sender].productsIndex.length--;
-        ProductDeleted(msg.sender,
+        LogProductDeleted(msg.sender,
             productCode,
             idxProductToDelete);
 
@@ -247,7 +249,7 @@ contract ShopKeeper {
         var afterVal = merchants[msg.sender].products[productCode].price * merchants[msg.sender].products[productCode].stock;
         shopGrossValue += beforeVal - afterVal;
 
-        ProductUpdated(msg.sender,
+        LogProductUpdated(msg.sender,
             productCode,
             merchants[msg.sender].products[productCode].idx,
             merchants[msg.sender].products[productCode].description,
@@ -311,7 +313,7 @@ contract ShopKeeper {
                                 merchants[merchantAddress].products[productCode].price,
                                 merchants[merchantAddress].products[productCode].stock -= quantity)) throw;
 
-        ProductBought(merchantAddress, productCode, msg.sender, quantity);
+        LogProductBought(merchantAddress, productCode, msg.sender, quantity);
 
 
         return true;
@@ -320,7 +322,7 @@ contract ShopKeeper {
 
 
     //do not allow eth to be sent
-    function() payable {
+    function() {
         throw;
     }
 

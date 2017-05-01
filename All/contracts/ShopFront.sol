@@ -1,7 +1,21 @@
 pragma solidity ^ 0.4 .0;
 
 import "./Owned.sol";
-contract ShopFront is Owned {
+
+contract Products {
+
+struct Product {
+    uint price;
+    uint stock;
+    uint idx;
+}
+  mapping(uint => Product) products;
+  uint[] productsIndex;
+
+
+}
+
+contract ShopFront is Owned, Products {
 
     //wk5. A SHOPFRONT
     //The project will start as a database whereby:
@@ -14,15 +28,6 @@ contract ShopFront is Owned {
     //add merchants akin to what Amazon has become.
     //add the ability to pay with a third-party token.
 
-    //address shopOwner;
-
-    struct Product {
-        uint price;
-        uint stock;
-        uint idx;
-    }
-    mapping(uint => Product) products;
-    uint[] productsIndex;
 
     //modifier onlyShopOwner() {
     //    if (msg.sender != shopOwner) throw;
