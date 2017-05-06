@@ -4,27 +4,36 @@
 const Promise = require("bluebird");
 const ShopFront = artifacts.require("./ShopFront.sol");
 
-web3.eth.getTransactionReceiptMined = function(txnHash, interval) {
+web3.eth.getTransactionReceiptMined = function (txnHash, interval) {
     var transactionReceiptAsync;
     interval = interval ? interval : 500;
     transactionReceiptAsync = function(txnHash, resolve, reject) {
-        try {
-            var receipt = web3.eth.getTransactionReceipt(txnHash);
-            if (receipt == null) {
-                setTimeout(function() {
-                    transactionReceiptAsync(txnHash, resolve, reject);
-                }, interval);
+        web3.eth.getTransactionReceipt(txnHash, (error, receipt) => {
+            if (error) {
+                reject(error);
             } else {
-                resolve(receipt);
+                if (receipt == null) {
+                    setTimeout(function () {
+                        transactionReceiptAsync(txnHash, resolve, reject);
+                    }, interval);
+                } else {
+                    resolve(receipt);
+                }
             }
-        } catch (e) {
-            reject(e);
-        }
+        });
     };
 
-    return new Promise(function(resolve, reject) {
-        transactionReceiptAsync(txnHash, resolve, reject);
-    });
+    if (Array.isArray(txnHash)) {
+        var promises = [];
+        txnHash.forEach(function (oneTxHash) {
+            promises.push(web3.eth.getTransactionReceiptMined(oneTxHash, interval));
+        });
+        return Promise.all(promises);
+    } else {
+        return new Promise(function (resolve, reject) {
+                transactionReceiptAsync(txnHash, resolve, reject);
+            });
+    }
 };
 
 // Found here https://gist.github.com/xavierlepretre/afab5a6ca65e0c52eaf902b50b807401
@@ -111,11 +120,11 @@ contract('ShopFront', function(accounts) {
               //	    		web3.eth.getTransactionReceiptMined(tx.tx)
               //    		]);
 
-              //  return web3.eth.getTransactionReceiptMined(tx.tx);
+                return web3.eth.getTransactionReceiptMined(tx.tx);
 
-//            })
-  // /         .then (function(receipt) {
-      //        console.log(receipt);
+            })
+            .then (function(receipt) {
+              console.log(receipt);
             });
     });
 

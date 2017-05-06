@@ -1,5 +1,7 @@
 pragma solidity ^0.4.4;
 
+
+//manages interaction with product and indexed array
 contract Products {
 
     struct Product {
